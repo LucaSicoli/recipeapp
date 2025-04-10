@@ -26,7 +26,8 @@ public class Recipe {
 
     private LocalDateTime fechaCreacion;
 
-    // Estados posibles: "PENDIENTE", "APROBADA", "RECHAZADA"
+    // Almacenamos el enum como String en la BD
+    @Enumerated(EnumType.STRING)
     private EstadoAprobacion estado;
 
     // Relación Many-to-One: muchas recetas pueden ser creadas por un mismo usuario.
@@ -38,8 +39,12 @@ public class Recipe {
     // Opcional: URL de una imagen principal almacenada externamente.
     private String fotoPrincipal;
 
+    // Almacenar la categoría como texto
+    @Enumerated(EnumType.STRING)
     private Categoria categoria;
 
+    // Almacenar el tipo de plato como texto
+    @Enumerated(EnumType.STRING)
     private TipoPlato tipoPlato;
 
 }
