@@ -2,6 +2,7 @@ package com.example.recipeapp.controller;
 
 import com.example.recipeapp.model.Recipe;
 import com.example.recipeapp.service.RecipeService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +19,12 @@ public class RecipeController {
     private RecipeService recipeService;
 
     // Crear una receta
-    @PostMapping
-    public ResponseEntity<Recipe> createRecipe(@RequestBody Recipe recipe) {
+    @PostMapping("/create")
+    public ResponseEntity<Recipe> createRecipe(@Valid @RequestBody Recipe recipe) {
         Recipe created = recipeService.createRecipe(recipe);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
+
 
     // Obtener recetas por estado de aprobación
     @GetMapping("/estado/{estado}")
