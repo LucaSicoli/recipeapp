@@ -30,6 +30,7 @@ public class Recipe {
     private EstadoAprobacion estado;
 
     // Relación Many-to-One: muchas recetas pueden ser creadas por un mismo usuario.
+    @Getter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_creador_id", nullable = false)
     private User usuarioCreador;
@@ -40,4 +41,6 @@ public class Recipe {
     private Categoria categoria;
 
     private TipoPlato tipoPlato;
+
 }
+

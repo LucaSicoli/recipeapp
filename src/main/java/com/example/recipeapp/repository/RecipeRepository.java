@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
@@ -25,6 +26,33 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
             "   WHERE i.nombre = :ingredientName" +
             ")")
     List<Recipe> findRecipesWithoutIngredient(@Param("ingredientName") String ingredientName);
+
+    @Query("SELECT r FROM Recipe r WHERE LOWER(r.nombre) LIKE LOWER(CONCAT('%', :namePart, '%')) ORDER BY r.fechaCreacion DESC")
+    List<Recipe> findByNameContainingOrderByFechaDesc(@Param("namePart") String namePart);
+
+    // Orden por nombre (alfabéticamente, default) - Busca tipo Plato
+    @Query("SELECT r FROM Recipe r WHERE LOWER(r.tipoPlato) = LOWER(:tipoPlato) ORDER BY r.nombre ASC")
+    List<Recipe> findByTipoPlatoOrderByNombreAsc(@Param("tipoPlato") String tipoPlato);
+
+    // Orden por fecha de creación
+    @Query("SELECT r FROM Recipe r WHERE LOWER(r.tipoPlato) = LOWER(:tipoPlato) ORDER BY r.fechaCreacion DESC")
+    List<Recipe> findByTipoPlatoOrderByFechaDesc(@Param("tipoPlato") String tipoPlato);
+
+    // Orden por nombre del usuario
+    @Query("SELECT r FROM Recipe r WHERE LOWER(r.tipoPlato) = LOWER(:tipoPlato) ORDER BY r.user.nombre ASC")
+    List<Recipe> findByTipoPlatoOrderByUsuarioAsc(@Param("tipoPlato") String tipoPlato);
+
+    // Orden por nombre de la receta - Busca por usuario
+    @Query("SELECT r FROM Recipe r WHERE LOWER(r.usuarioCreador.nombre) = LOWER(:nombreUsuario) ORDER BY r.nombre ASC")
+    List<Recipe> findByUserNombreOrderByNombreAsc(@Param("nombreUsuario") String nombreUsuario);
+
+    // Orden por fecha de creación - Busca por usuario
+    @Query("SELECT r FROM Recipe r WHERE LOWER(r.usuarioCreador.nombre) = LOWER(:nombreUsuario) ORDER BY r.fechaCreacion DESC")
+    List<Recipe> findByUserNombreOrderByFechaDesc(@Param("nombreUsuario") String nombreUsuario);
+
+    //Buscara por usuario y nombre de la receta
+    @Query("SELECT r FROM Recipe r WHERE LOWER(r.nombre) = LOWER(:nombre) AND LOWER(r.usuarioCreador.nombre) = LOWER(:nombreUsuario)")
+    Optional<Recipe> findByNombreAndUserId(@Param("nombre") String nombre, @Param("userId") Long userId);
 
     List<Recipe> findByEstado(EstadoAprobacion estado);
 

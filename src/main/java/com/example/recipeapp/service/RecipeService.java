@@ -18,6 +18,13 @@ public class RecipeService {
 
     // Método existente para crear una receta (como ejemplo)
     public Recipe createRecipe(Recipe recipe) {
+        // Validar si el usuario ya tiene una receta con ese nombre
+        Optional<Recipe> existente = recipeRepository.findByNombreAndUserId(recipe.getNombre(), recipe.getUsuarioCreador().getId());
+
+        if (existente.isPresent()) {
+            throw new IllegalArgumentException("Ya existe una receta con ese nombre para este usuario.");
+        }
+
         recipe.setFechaCreacion(LocalDateTime.now());
         recipe.setEstado(EstadoAprobacion.PENDIENTE);
         return recipeRepository.save(recipe);
@@ -31,6 +38,33 @@ public class RecipeService {
     // Obtiene recetas que no contengan un ingrediente específico
     public List<Recipe> getRecipesWithoutIngredient(String ingredientName) {
         return recipeRepository.findRecipesWithoutIngredient(ingredientName);
+    }
+
+    //Obtiene recetas por alguna parte del nombre de la receta
+    public List<Recipe> getRecipesByName(String namePart) {
+        return recipeRepository.findByNameContainingOrderByFechaDesc(namePart);
+    }
+
+    public List<Recipe> getRecipesByTipoPlato(String tipoPlato, String orden) {
+        switch (orden.toLowerCase()) {
+            case "fecha":
+                return recipeRepository.findByTipoPlatoOrderByFechaDesc(tipoPlato);
+            case "usuario":
+                return recipeRepository.findByTipoPlatoOrderByUsuarioAsc(tipoPlato);
+            case "nombre":
+            default:
+                return recipeRepository.findByTipoPlatoOrderByNombreAsc(tipoPlato);
+        }
+    }
+
+    public List<Recipe> getRecipesByNombreUsuario(String nombreUsuario, String orden) {
+        switch (orden.toLowerCase()) {
+            case "fecha":
+                return recipeRepository.findByUserNombreOrderByFechaDesc(nombreUsuario);
+            case "nombre":
+            default:
+                return recipeRepository.findByUserNombreOrderByNombreAsc(nombreUsuario);
+        }
     }
 
     // Otros métodos de servicio existentes…

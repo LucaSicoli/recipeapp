@@ -39,6 +39,46 @@ public class RecipeController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    // Buscar recetas por nombre (o parte del nombre), ordenadas de más nuevas a más antiguas
+    @GetMapping("/buscar")
+    public ResponseEntity<List<Recipe>> getRecipesByName(@RequestParam String nombre) {
+        List<Recipe> recipes = recipeService.getRecipesByName(nombre);
+        return new ResponseEntity<>(recipes, HttpStatus.OK);
+    }
+
+    @GetMapping("/tipo")
+    public ResponseEntity<List<Recipe>> getRecipesByTipoPlato(
+            @RequestParam String tipoPlato,
+            @RequestParam(required = false, defaultValue = "nombre") String orden) {
+
+        List<Recipe> recipes = recipeService.getRecipesByTipoPlato(tipoPlato, orden);
+        return new ResponseEntity<>(recipes, HttpStatus.OK);
+    }
+
+
+    /*
+    GET /recipes/tipo?tipoPlato=pasta&orden=fecha
+    GET /recipes/tipo?tipoPlato=ensalada&orden=usuario
+    GET /recipes/tipo?tipoPlato=postre
+    Ejemplos endpoints para agarrar tipo de plato y ordenarlo
+    */
+
+
+    @GetMapping("/usuario")
+    public ResponseEntity<List<Recipe>> getRecipesByNombreUsuario(
+            @RequestParam String nombre,
+            @RequestParam(required = false, defaultValue = "nombre") String orden) {
+
+        List<Recipe> recipes = recipeService.getRecipesByNombreUsuario(nombre, orden);
+        return new ResponseEntity<>(recipes, HttpStatus.OK);
+    }
+
+    /*
+        GET /recipes/usuario?nombre=juan&orden=fecha
+        GET /recipes/usuario?nombre=camila
+
+     */
+
     // Actualizar una receta
     @PutMapping("/{id}")
     public ResponseEntity<Recipe> updateRecipe(@PathVariable Long id, @RequestBody Recipe recipe) {
