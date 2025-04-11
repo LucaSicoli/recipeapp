@@ -50,6 +50,13 @@ public class RecipeService {
         return recipeRepository.findRecipesWithoutIngredient(ingredientName);
     }
 
+    public Optional<Recipe> getRecipeByIdWithCreator(Long id) {
+        return recipeRepository.findByIdWithUsuarioCreador(id);
+    }
+
+
+
+
     // Otros métodos de servicio existentes…
     public Optional<Recipe> getRecipeById(Long id) {
         return recipeRepository.findById(id);

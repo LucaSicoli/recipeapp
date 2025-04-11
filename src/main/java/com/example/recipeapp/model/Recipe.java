@@ -1,5 +1,8 @@
 package com.example.recipeapp.model;
 
+import com.example.recipeapp.config.UserSimpleSerializer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -33,6 +36,7 @@ public class Recipe {
     // Relación Many-to-One: muchas recetas pueden ser creadas por un mismo usuario.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_creador_id", nullable = false)
+    @JsonSerialize(using = UserSimpleSerializer.class)
     private User usuarioCreador;
 
     // Opcional: URL de una imagen principal almacenada externamente.

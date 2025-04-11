@@ -1,6 +1,9 @@
 package com.example.recipeapp.controller;
 
+import com.example.recipeapp.model.Categoria;
 import com.example.recipeapp.model.Recipe;
+import com.example.recipeapp.model.TipoPlato;
+import com.example.recipeapp.payload.RecipeRequest;
 import com.example.recipeapp.service.RecipeService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +23,25 @@ public class RecipeController {
 
     // Crear una receta
     @PostMapping("/create")
-    public ResponseEntity<Recipe> createRecipe(@Valid @RequestBody Recipe recipe) {
+    public ResponseEntity<Recipe> createRecipe(@Valid @RequestBody RecipeRequest recipeRequest) {
+        Recipe recipe = new Recipe();
+        recipe.setNombre(recipeRequest.getNombre());
+        recipe.setDescripcion(recipeRequest.getDescripcion());
+        recipe.setTiempo(recipeRequest.getTiempo());
+        recipe.setPorciones(recipeRequest.getPorciones());
+        recipe.setFotoPrincipal(recipeRequest.getFotoPrincipal());
+        // Conversión de enums si es necesario
+        recipe.setCategoria(Categoria.valueOf(recipeRequest.getCategoria().toUpperCase()));
+        recipe.setTipoPlato(TipoPlato.valueOf(recipeRequest.getTipoPlato().toUpperCase()));
+
         Recipe created = recipeService.createRecipe(recipe);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{id}/full")
+    public ResponseEntity<Recipe> getRecipeByIdWithCreator(@PathVariable Long id) {
+        Optional<Recipe> recipeOpt = recipeService.getRecipeByIdWithCreator(id);
+        return recipeOpt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
@@ -36,9 +55,9 @@ public class RecipeController {
     // Obtener una receta por ID
     @GetMapping("/{id}")
     public ResponseEntity<Recipe> getRecipeById(@PathVariable Long id) {
-        Optional<Recipe> recipe = recipeService.getRecipeById(id);
-        return recipe.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Optional<Recipe> recipe = recipeService.getRecipeByIdWithCreator(id); // Usa el método join fetch
+        return recipe.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // Actualizar una receta

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.util.List;
+import java.util.Optional;
 
 public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
@@ -27,4 +28,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     // Método para buscar recetas por el estado (basado en la propiedad 'estado' de Recipe)
     List<Recipe> findByEstado(EstadoAprobacion estado);
+
+    @Query("SELECT r FROM Recipe r JOIN FETCH r.usuarioCreador WHERE r.id = :id")
+    Optional<Recipe> findByIdWithUsuarioCreador(@Param("id") Long id);
 }
