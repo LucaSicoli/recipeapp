@@ -1,9 +1,9 @@
 package com.example.recipeapp.controller;
 
-import com.example.recipeapp.model.Categoria;
-import com.example.recipeapp.model.Recipe;
-import com.example.recipeapp.model.TipoPlato;
+import com.example.recipeapp.model.*;
 import com.example.recipeapp.payload.RecipeRequest;
+import com.example.recipeapp.service.IngredientService;
+import com.example.recipeapp.service.RecipeIngredientService;
 import com.example.recipeapp.service.RecipeService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +21,12 @@ public class RecipeController {
     @Autowired
     private RecipeService recipeService;
 
+    @Autowired
+    private IngredientService ingredientService;  // Agrega esta línea
+
+    @Autowired
+    private RecipeIngredientService recipeIngredientService;
+
     // Crear una receta
     @PostMapping("/create")
     public ResponseEntity<Recipe> createRecipe(@Valid @RequestBody RecipeRequest recipeRequest) {
@@ -30,13 +36,15 @@ public class RecipeController {
         recipe.setTiempo(recipeRequest.getTiempo());
         recipe.setPorciones(recipeRequest.getPorciones());
         recipe.setFotoPrincipal(recipeRequest.getFotoPrincipal());
-        // Conversión de enums si es necesario
         recipe.setCategoria(Categoria.valueOf(recipeRequest.getCategoria().toUpperCase()));
         recipe.setTipoPlato(TipoPlato.valueOf(recipeRequest.getTipoPlato().toUpperCase()));
 
-        Recipe created = recipeService.createRecipe(recipe);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+        // Llama al método modificado. Ahora, en lugar de solo la receta, también se envía la lista de ingredientes.
+        Recipe createdRecipe = recipeService.createRecipe(recipe, recipeRequest.getIngredients());
+        return new ResponseEntity<>(createdRecipe, HttpStatus.CREATED);
     }
+
+
 
     @GetMapping("/{id}/full")
     public ResponseEntity<Recipe> getRecipeByIdWithCreator(@PathVariable Long id) {

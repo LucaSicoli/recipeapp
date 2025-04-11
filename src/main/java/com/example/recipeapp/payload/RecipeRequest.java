@@ -2,6 +2,8 @@ package com.example.recipeapp.payload;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class RecipeRequest {
     private String nombre;
@@ -11,4 +13,5 @@ public class RecipeRequest {
     private String fotoPrincipal;
     private String categoria;
     private String tipoPlato;
+    private List<RecipeIngredientRequest> ingredients;
 }

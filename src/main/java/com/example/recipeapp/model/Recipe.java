@@ -1,11 +1,13 @@
 package com.example.recipeapp.model;
 
 import com.example.recipeapp.config.UserSimpleSerializer;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -29,24 +31,26 @@ public class Recipe {
 
     private LocalDateTime fechaCreacion;
 
-    // Almacenamos el enum como String en la BD
     @Enumerated(EnumType.STRING)
     private EstadoAprobacion estado;
 
-    // Relación Many-to-One: muchas recetas pueden ser creadas por un mismo usuario.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_creador_id", nullable = false)
     @JsonSerialize(using = UserSimpleSerializer.class)
     private User usuarioCreador;
 
-    // Opcional: URL de una imagen principal almacenada externamente.
     private String fotoPrincipal;
 
-    // Almacenar la categoría como texto
     @Enumerated(EnumType.STRING)
     private Categoria categoria;
 
-    // Almacenar el tipo de plato como texto
     @Enumerated(EnumType.STRING)
     private TipoPlato tipoPlato;
+
+    // Agregar la relación One-to-Many a RecipeIngredient
+    // Usamos FetchType.EAGER para que se carguen automáticamente al obtener la receta,
+    // pero también se podría usar LAZY y usar JOIN FETCH en el repository.
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties("recipe") // Evita la recursión en la serialización
+    private List<RecipeIngredient> ingredients = new ArrayList<>();
 }

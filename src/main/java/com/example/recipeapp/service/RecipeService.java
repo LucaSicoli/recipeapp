@@ -1,8 +1,8 @@
 package com.example.recipeapp.service;
 
-import com.example.recipeapp.model.EstadoAprobacion;
-import com.example.recipeapp.model.Recipe;
-import com.example.recipeapp.model.User;
+import com.example.recipeapp.factory.RecipeIngredientFactory;
+import com.example.recipeapp.model.*;
+import com.example.recipeapp.payload.RecipeIngredientRequest;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,32 +20,47 @@ public class RecipeService {
     private RecipeRepository recipeRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private IngredientService ingredientService;
+    @Autowired
+    private RecipeIngredientService recipeIngredientService;
+    @Autowired
+    private RecipeIngredientFactory recipeIngredientFactory; // Inyectamos la factory
 
-    // Método existente para crear una receta (como ejemplo)
-    public Recipe createRecipe(Recipe recipe) {
-        // Establece la fecha de creación y el estado
+    // Método para crear una receta con ingredientes usando el Factory Pattern
+    public Recipe createRecipe(Recipe recipe, List<RecipeIngredientRequest> ingredientsReq) {
+        // Asigna fecha, estado y el usuario autenticado
         recipe.setFechaCreacion(LocalDateTime.now());
         recipe.setEstado(EstadoAprobacion.PENDIENTE);
-
-        // Obtén el usuario autenticado del contexto de seguridad
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isPresent()) {
             recipe.setUsuarioCreador(optionalUser.get());
         } else {
-            // Maneja el caso en que el usuario autenticado no se encuentre (posiblemente lanza una excepción)
             throw new RuntimeException("Usuario autenticado no encontrado en la base de datos");
         }
 
-        return recipeRepository.save(recipe);
+        // Guarda la receta principal
+        Recipe createdRecipe = recipeRepository.save(recipe);
+
+        // Procesa la lista de ingredientes, si se envía
+        if (ingredientsReq != null) {
+            ingredientsReq.forEach(ingredientReq -> {
+                // Utiliza el factory para crear la relación RecipeIngredient
+                RecipeIngredient recipeIngredient = recipeIngredientFactory.createRecipeIngredient(ingredientReq, createdRecipe);
+                recipeIngredientService.addIngredientToRecipe(recipeIngredient);
+                createdRecipe.getIngredients().add(recipeIngredient);
+            });
+        }
+
+        return createdRecipe;
     }
 
-    // Obtiene recetas que contengan un ingrediente específico
+    // Otros métodos existentes...
     public List<Recipe> getRecipesByIngredient(String ingredientName) {
         return recipeRepository.findRecipesByIngredient(ingredientName);
     }
 
-    // Obtiene recetas que no contengan un ingrediente específico
     public List<Recipe> getRecipesWithoutIngredient(String ingredientName) {
         return recipeRepository.findRecipesWithoutIngredient(ingredientName);
     }
@@ -54,10 +69,6 @@ public class RecipeService {
         return recipeRepository.findByIdWithUsuarioCreador(id);
     }
 
-
-
-
-    // Otros métodos de servicio existentes…
     public Optional<Recipe> getRecipeById(Long id) {
         return recipeRepository.findById(id);
     }
