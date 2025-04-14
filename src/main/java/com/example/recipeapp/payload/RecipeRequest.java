@@ -14,4 +14,5 @@ public class RecipeRequest {
     private String categoria;
     private String tipoPlato;
     private List<RecipeIngredientRequest> ingredients;
+    private List<RecipeStepRequest> steps;
 }

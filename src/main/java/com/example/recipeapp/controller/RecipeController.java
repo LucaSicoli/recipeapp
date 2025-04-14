@@ -30,20 +30,9 @@ public class RecipeController {
     // Crear una receta
     @PostMapping("/create")
     public ResponseEntity<Recipe> createRecipe(@Valid @RequestBody RecipeRequest recipeRequest) {
-        Recipe recipe = new Recipe();
-        recipe.setNombre(recipeRequest.getNombre());
-        recipe.setDescripcion(recipeRequest.getDescripcion());
-        recipe.setTiempo(recipeRequest.getTiempo());
-        recipe.setPorciones(recipeRequest.getPorciones());
-        recipe.setFotoPrincipal(recipeRequest.getFotoPrincipal());
-        recipe.setCategoria(Categoria.valueOf(recipeRequest.getCategoria().toUpperCase()));
-        recipe.setTipoPlato(TipoPlato.valueOf(recipeRequest.getTipoPlato().toUpperCase()));
-
-        // Llama al método modificado. Ahora, en lugar de solo la receta, también se envía la lista de ingredientes.
-        Recipe createdRecipe = recipeService.createRecipe(recipe, recipeRequest.getIngredients());
+        Recipe createdRecipe = recipeService.createRecipe(recipeRequest);
         return new ResponseEntity<>(createdRecipe, HttpStatus.CREATED);
     }
-
 
 
     @GetMapping("/{id}/full")

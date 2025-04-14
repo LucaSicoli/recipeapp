@@ -47,10 +47,13 @@ public class Recipe {
     @Enumerated(EnumType.STRING)
     private TipoPlato tipoPlato;
 
-    // Agregar la relación One-to-Many a RecipeIngredient
-    // Usamos FetchType.EAGER para que se carguen automáticamente al obtener la receta,
-    // pero también se podría usar LAZY y usar JOIN FETCH en el repository.
+    // Relación con ingredientes
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JsonIgnoreProperties("recipe") // Evita la recursión en la serialización
+    @JsonIgnoreProperties("recipe")
     private List<RecipeIngredient> ingredients = new ArrayList<>();
+
+    // NUEVO: Relación con pasos (steps)
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties("recipe")
+    private List<RecipeStep> steps = new ArrayList<>();
 }

@@ -27,23 +27,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+
+        if (requestURI.startsWith("/auth/login")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
             String jwt = parseJwt(request);
-            if (jwt != null && jwtUtil.validateJwtToken(jwt)) {
+            if (jwt == null) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"No se encontró el token JWT en la petición.\"}");
+                return;
+            }
+            if (jwtUtil.validateJwtToken(jwt)) {
                 String username = jwtUtil.getUsernameFromJwtToken(jwt);
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(
-                        new org.springframework.security.web.authentication.WebAuthenticationDetailsSource().buildDetails(request)
-                );
+                authentication.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
             logger.error("No se pudo establecer la autenticación del usuario", e);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"JWT inválido: " + e.getMessage() + "\"}");
+            return;
         }
         filterChain.doFilter(request, response);
     }
+
 
     // Extrae el token JWT del encabezado Authorization
     private String parseJwt(HttpServletRequest request) {

@@ -1,8 +1,12 @@
 package com.example.recipeapp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -32,5 +36,11 @@ public class User {
 
     private Boolean activo = true;
 
-    private String URLfotoPerfil;
+    private String urlFotoPerfil;  // Recomiendo camelCase
+
+    // Relación bidireccional: un usuario puede tener varias recetas guardadas
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<UserSavedRecipe> savedRecipes = new ArrayList<>();
+
 }

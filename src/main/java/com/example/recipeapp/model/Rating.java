@@ -15,21 +15,21 @@ public class Rating {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Relación: el usuario que realiza el rating
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    // Relación: la receta que recibe el rating
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipe_id", nullable = false)
     private Recipe recipe;
 
-    private Integer puntos; // Por ejemplo, de 1 a 5.
+    // Puntos de rating de 1 a 5
+    private Integer puntos;
 
     @Column(length = 2000)
     private String comentario;
 
     private LocalDateTime fecha;
-
-    // Estado para moderar el comentario: "PENDIENTE", "APROBADA", "RECHAZADA"
-    private String estado;
 }

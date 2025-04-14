@@ -22,30 +22,25 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest loginRequest) {
         // Verifica que se hayan enviado email, alias y password
         if (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty() ||
                 loginRequest.getAlias() == null || loginRequest.getAlias().isEmpty() ||
                 loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
-            return ResponseEntity.badRequest().body("Email, alias y password son requeridos");
+            throw new IllegalArgumentException("Email, alias y password son requeridos");
         }
 
         // Construir el identificador compuesto: "email|alias"
         String compoundIdentifier = loginRequest.getEmail() + "|" + loginRequest.getAlias();
 
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            compoundIdentifier,
-                            loginRequest.getPassword()
-                    )
-            );
-            System.out.println("Usuario autenticado: " + authentication.getName());
-            // Genera el token JWT usando el identificador compuesto
-            String jwt = jwtUtil.generateJwtToken(compoundIdentifier);
-            return ResponseEntity.ok(new JwtResponse(jwt));
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(401).body("Credenciales inválidas");
-        }
+        // Autenticación: si falla, se lanzará AuthenticationException
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(compoundIdentifier, loginRequest.getPassword())
+        );
+        System.out.println("Usuario autenticado: " + authentication.getName());
+
+        // Genera el token JWT usando el identificador compuesto
+        String jwt = jwtUtil.generateJwtToken(compoundIdentifier);
+        return ResponseEntity.ok(new JwtResponse(jwt));
     }
 }

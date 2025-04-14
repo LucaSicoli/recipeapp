@@ -1,5 +1,6 @@
 package com.example.recipeapp.config;
 
+import com.example.recipeapp.security.CustomAuthenticationEntryPoint;
 import com.example.recipeapp.security.CustomUserDetailsService;
 import com.example.recipeapp.security.JwtAuthenticationFilter;
 import com.example.recipeapp.security.JwtUtil;
@@ -47,20 +48,21 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    DaoAuthenticationProvider authProvider,
-                                                   JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+                                                   JwtAuthenticationFilter jwtAuthenticationFilter, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Permite el acceso al endpoint de login sin autenticación
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
-                // Registra nuestro provider custom
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(customAuthenticationEntryPoint) // inyecta tu CustomAuthenticationEntryPoint
+                )
                 .authenticationProvider(authProvider)
                 .httpBasic(Customizer.withDefaults())
-                // Agrega el filtro JWT antes del filtro de autenticación estándar
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }
