@@ -23,7 +23,7 @@ public class RecipeService {
 
     // Método existente para crear una receta (como ejemplo)
     public Recipe createRecipe(Recipe recipe) {
-<<<<<<< HEAD
+
         // Validar si el usuario ya tiene una receta con ese nombre
         Optional<Recipe> existente = recipeRepository.findByNombreAndUserId(recipe.getNombre(), recipe.getUsuarioCreador().getId());
 
@@ -31,9 +31,9 @@ public class RecipeService {
             throw new IllegalArgumentException("Ya existe una receta con ese nombre para este usuario.");
         }
 
-=======
+
         // Establece la fecha de creación y el estado
->>>>>>> c887bdf652b93c508466ea16ab69872ae29a1ae9
+
         recipe.setFechaCreacion(LocalDateTime.now());
         recipe.setEstado(EstadoAprobacion.PENDIENTE);
 

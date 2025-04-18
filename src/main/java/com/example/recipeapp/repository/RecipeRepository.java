@@ -26,7 +26,7 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
             ")")
     List<Recipe> findRecipesWithoutIngredient(@Param("ingredientName") String ingredientName);
 
-<<<<<<< HEAD
+
     @Query("SELECT r FROM Recipe r WHERE LOWER(r.nombre) LIKE LOWER(CONCAT('%', :namePart, '%')) ORDER BY r.fechaCreacion DESC")
     List<Recipe> findByNameContainingOrderByFechaDesc(@Param("namePart") String namePart);
 
@@ -54,8 +54,8 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     @Query("SELECT r FROM Recipe r WHERE LOWER(r.nombre) = LOWER(:nombre) AND LOWER(r.usuarioCreador.nombre) = LOWER(:nombreUsuario)")
     Optional<Recipe> findByNombreAndUserId(@Param("nombre") String nombre, @Param("userId") Long userId);
 
-=======
+
     // Método para buscar recetas por el estado (basado en la propiedad 'estado' de Recipe)
->>>>>>> c887bdf652b93c508466ea16ab69872ae29a1ae9
+
     List<Recipe> findByEstado(EstadoAprobacion estado);
 }
