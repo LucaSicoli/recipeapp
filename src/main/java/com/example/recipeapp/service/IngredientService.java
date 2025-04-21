@@ -30,6 +30,14 @@ public class IngredientService {
     }
 
     public void deleteIngredient(Long id) {
+        Ingredient ingredient = ingredientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ingrediente no encontrado"));
+
+        if (!ingredient.getRecipeIngredients().isEmpty()) {
+            throw new RuntimeException("No se puede eliminar: el ingrediente está en uso en una receta.");
+        }
+
         ingredientRepository.deleteById(id);
     }
+
 }

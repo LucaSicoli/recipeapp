@@ -1,7 +1,8 @@
 package com.example.recipeapp.controller;
 
-import com.example.recipeapp.payload.RatingDTO;
+import com.example.recipeapp.payload.CreateRatingRequest;
 import com.example.recipeapp.model.Rating;
+import com.example.recipeapp.payload.RatingResponse;
 import com.example.recipeapp.service.RatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,18 +20,19 @@ public class RatingController {
 
     // Agregar un rating
     @PostMapping
-    public ResponseEntity<Rating> addRating(@RequestBody Rating rating) {
-        Rating created = ratingService.addRating(rating);
+    public ResponseEntity<RatingResponse> addRating(@RequestBody CreateRatingRequest request) {
+        RatingResponse created = ratingService.addRatingFromRequest(request);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
 
     // Obtener valoraciones de una receta, pero devolviendo DTO
     @GetMapping("/recipe/{recipeId}")
-    public ResponseEntity<List<RatingDTO>> getRatingsByRecipe(@PathVariable Long recipeId) {
-        List<RatingDTO> ratings = ratingService.getRatingsDTOByRecipeId(recipeId);
+    public ResponseEntity<List<RatingResponse>> getRatingsByRecipe(@PathVariable Long recipeId) {
+        List<RatingResponse> ratings = ratingService.getRatingsDTOByRecipeId(recipeId);
         return new ResponseEntity<>(ratings, HttpStatus.OK);
     }
+
 
     // Actualizar un rating
     @PutMapping("/{id}")

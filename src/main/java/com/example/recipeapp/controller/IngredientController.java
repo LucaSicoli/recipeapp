@@ -33,10 +33,20 @@ public class IngredientController {
 
     // Actualizar un ingrediente
     @PutMapping("/{id}")
-    public ResponseEntity<Ingredient> updateIngredient(@PathVariable Long id, @RequestBody Ingredient ingredient) {
-        Ingredient updated = ingredientService.updateIngredient(ingredient);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+    public ResponseEntity<Ingredient> updateIngredient(
+            @PathVariable Long id,
+            @RequestBody Ingredient incoming) {
+
+        return ingredientService.getIngredientById(id)
+                .map(existing -> {
+                    existing.setNombre(incoming.getNombre());
+                    // si tu entidad tuviera más campos, los ajustas aquí...
+                    Ingredient updated = ingredientService.updateIngredient(existing);
+                    return ResponseEntity.ok(updated);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
 
     // Eliminar un ingrediente
     @DeleteMapping("/{id}")

@@ -1,17 +1,15 @@
 package com.example.recipeapp.payload;
 
-import java.time.LocalDateTime;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 
 @Data
-public class RatingDTO {
+public class RatingResponse {
     private Long id;
-    private Long userId;
-    private String userAlias; // si quieres mostrar el alias del usuario
-    private Long recipeId;
+    private String userAlias;
+    private String recipeNombre;
     private Integer puntos;
     private String comentario;
     private LocalDateTime fecha;
-
 }
