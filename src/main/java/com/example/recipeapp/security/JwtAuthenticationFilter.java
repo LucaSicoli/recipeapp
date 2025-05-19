@@ -30,7 +30,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String requestURI = request.getRequestURI();
 
-        if (requestURI.startsWith("/api/auth/login")) {
+        if (requestURI.startsWith("/api/auth/login")
+                || requestURI.startsWith("/api/auth/request-reset")
+                || requestURI.startsWith("/api/auth/verify-reset-code")
+                || requestURI.startsWith("/images/**")
+                || requestURI.startsWith("/api/auth/reset-password")) {
             filterChain.doFilter(request, response);
             return;
         }

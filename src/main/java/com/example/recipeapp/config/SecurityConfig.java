@@ -53,25 +53,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                    DaoAuthenticationProvider authProvider,
-                                                   JwtAuthenticationFilter jwtAuthenticationFilter, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
+                                                   JwtAuthenticationFilter jwtFilter,
+                                                   CustomAuthenticationEntryPoint entryPoint) throws Exception {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // haces públicos todos los endpoints de auth que no necesitan token
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/auth/login",
+                                "/api/auth/request-reset",
+                                "/api/auth/verify-reset-code",
+                                "/api/auth/reset-password"
+                        ).permitAll()
+
+                        // sigue público tu endpoint de imágenes
                         .requestMatchers("/images/**").permitAll()
+
+                        // todo lo demás requiere JWT
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(customAuthenticationEntryPoint) // inyecta tu CustomAuthenticationEntryPoint
-                )
-                .authenticationProvider(authProvider)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
+                .exceptionHandling(e -> e.authenticationEntryPoint(entryPoint))
+                .authenticationProvider(authProvider)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 
     // Exponemos el AuthenticationManager para inyectarlo en otros componentes si es necesario
     @Bean
