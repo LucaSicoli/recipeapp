@@ -70,4 +70,10 @@ public class RecipeController {
         recipeService.deleteRecipe(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @GetMapping
+    public ResponseEntity<List<Recipe>> getAllApprovedRecipes() {
+        List<Recipe> recipes = recipeService.getRecipesByEstado("APROBADO");
+        return ResponseEntity.ok(recipes);
+    }
 }
