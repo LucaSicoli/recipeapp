@@ -16,10 +16,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService customUserDetailsService;
 
-    // Constructor que recibe las dependencias
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, CustomUserDetailsService customUserDetailsService) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil,
+                                   CustomUserDetailsService customUserDetailsService) {
         this.jwtUtil = jwtUtil;
         this.customUserDetailsService = customUserDetailsService;
+    }
+
+    /**
+     * Aquí indicamos que NO queremos filtrar las rutas públicas
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getServletPath();
+        return path.startsWith("/api/auth/")
+                || path.startsWith("/images/");
     }
 
     @Override
@@ -27,50 +37,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-
-        String requestURI = request.getRequestURI();
-
-        if (requestURI.startsWith("/api/auth/login")
-                || requestURI.startsWith("/api/auth/request-reset")
-                || requestURI.startsWith("/api/auth/verify-reset-code")
-                || requestURI.startsWith("/images/**")
-                || requestURI.startsWith("/api/auth/reset-password")) {
-            filterChain.doFilter(request, response);
+        // Si llegamos aquí, es una ruta que SÍ debe pasar por JWT
+        String jwt = parseJwt(request);
+        if (jwt == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter()
+                    .write("{\"error\": \"No se encontró el token JWT en la petición.\"}");
             return;
         }
 
         try {
-            String jwt = parseJwt(request);
-            if (jwt == null) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"error\": \"No se encontró el token JWT en la petición.\"}");
-                return;
-            }
             if (jwtUtil.validateJwtToken(jwt)) {
                 String username = jwtUtil.getUsernameFromJwtToken(jwt);
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities()
+                        );
+                auth.setDetails(
+                        new org.springframework.security.web.authentication.
+                                WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
         } catch (Exception e) {
-            logger.error("No se pudo establecer la autenticación del usuario", e);
+            logger.error("Error al validar JWT", e);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            response.getWriter().write("{\"error\": \"JWT inválido: " + e.getMessage() + "\"}");
+            response.getWriter()
+                    .write("{\"error\": \"JWT inválido: " + e.getMessage() + "\"}");
             return;
         }
+
+        // Si todo OK, seguimos la cadena
         filterChain.doFilter(request, response);
     }
 
-
-    // Extrae el token JWT del encabezado Authorization
     private String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader("Authorization");
-        if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7);
+        String header = request.getHeader("Authorization");
+        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
+            return header.substring(7);
         }
         return null;
     }
