@@ -64,11 +64,19 @@ public class RecipeController {
         return new ResponseEntity<>(updated, HttpStatus.OK);
     }
 
-    // Eliminar una receta
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRecipe(@PathVariable Long id) {
+        if (!recipeService.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
         recipeService.deleteRecipe(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAllRecipes() {
+        recipeService.deleteAllRecipes();
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

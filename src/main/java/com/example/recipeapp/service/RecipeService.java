@@ -7,6 +7,7 @@ import com.example.recipeapp.payload.RecipeIngredientRequest;
 import com.example.recipeapp.payload.RecipeStepRequest;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,10 +31,8 @@ public class RecipeService {
 
     // Método para crear una receta a partir de RecipeRequest completo
     public Recipe createRecipe(RecipeRequest request) {
-        // Usa el factory para construir la receta (con ingredientes y steps asociados)
-        Recipe recipe = recipeFactory.createRecipeFromRequest(request);
 
-        // Asigna campos adicionales, como fecha, estado y usuario autenticado
+        Recipe recipe = recipeFactory.createRecipeFromRequest(request);
         recipe.setFechaCreacion(LocalDateTime.now());
         recipe.setEstado(EstadoAprobacion.PENDIENTE);
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -44,12 +43,9 @@ public class RecipeService {
             throw new RuntimeException("Usuario autenticado no encontrado en la base de datos");
         }
 
-        // Persiste la receta completa.
-        // Dado que Recipe tiene CascadeType.ALL en las relaciones, ingredientes y pasos se persistirán en cascada.
         return recipeRepository.save(recipe);
     }
 
-    // Otros métodos de servicio siguen igual...
     public List<Recipe> getRecipesByIngredient(String ingredientName) {
         return recipeRepository.findRecipesByIngredient(ingredientName);
     }
@@ -62,6 +58,10 @@ public class RecipeService {
         return recipeRepository.findByIdWithUsuarioCreador(id);
     }
 
+    public boolean existsById(Long id) {
+        return recipeRepository.existsById(id);
+    }
+
     public Optional<Recipe> getRecipeById(Long id) {
         return recipeRepository.findById(id);
     }
@@ -72,6 +72,11 @@ public class RecipeService {
 
     public void deleteRecipe(Long id) {
         recipeRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteAllRecipes() {
+        recipeRepository.deleteAll();
     }
 
     public List<Recipe> getRecipesByEstado(String estado) {
