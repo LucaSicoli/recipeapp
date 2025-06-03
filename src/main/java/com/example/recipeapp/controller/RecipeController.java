@@ -2,6 +2,7 @@ package com.example.recipeapp.controller;
 
 import com.example.recipeapp.model.*;
 import com.example.recipeapp.payload.RecipeRequest;
+import com.example.recipeapp.payload.RecipeSummaryResponse;
 import com.example.recipeapp.service.IngredientService;
 import com.example.recipeapp.service.RecipeIngredientService;
 import com.example.recipeapp.service.RecipeService;
@@ -83,5 +84,11 @@ public class RecipeController {
     public ResponseEntity<List<Recipe>> getAllApprovedRecipes() {
         List<Recipe> recipes = recipeService.getRecipesByEstado("APROBADO");
         return ResponseEntity.ok(recipes);
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<List<RecipeSummaryResponse>> getAllRecipesSummary() {
+        List<RecipeSummaryResponse> dtos = recipeService.getAllRecipesWithAverage();
+        return ResponseEntity.ok(dtos);
     }
 }

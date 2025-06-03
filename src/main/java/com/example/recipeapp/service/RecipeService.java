@@ -1,40 +1,55 @@
 package com.example.recipeapp.service;
 
 import com.example.recipeapp.factory.RecipeFactory;
-import com.example.recipeapp.model.*;
+import com.example.recipeapp.model.EstadoAprobacion;
+import com.example.recipeapp.model.Recipe;
+import com.example.recipeapp.model.User;
+import com.example.recipeapp.payload.RecipeSummaryResponse;
 import com.example.recipeapp.payload.RecipeRequest;
 import com.example.recipeapp.payload.RecipeIngredientRequest;
 import com.example.recipeapp.payload.RecipeStepRequest;
+import com.example.recipeapp.repository.RatingRepository;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class RecipeService {
 
     @Autowired
     private RecipeRepository recipeRepository;
+
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RatingRepository ratingRepository;
+
     @Autowired
     private IngredientService ingredientService;
+
     @Autowired
     private RecipeIngredientService recipeIngredientService;
+
     @Autowired
     private RecipeFactory recipeFactory;  // Inyectamos el RecipeFactory
 
-    // Método para crear una receta a partir de RecipeRequest completo
+    // ------------------------------------------------------------
+    // Método existente: crear una receta a partir de RecipeRequest
+    // ------------------------------------------------------------
     public Recipe createRecipe(RecipeRequest request) {
-
         Recipe recipe = recipeFactory.createRecipeFromRequest(request);
         recipe.setFechaCreacion(LocalDateTime.now());
         recipe.setEstado(EstadoAprobacion.PENDIENTE);
+
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isPresent()) {
@@ -46,6 +61,40 @@ public class RecipeService {
         return recipeRepository.save(recipe);
     }
 
+    // ------------------------------------------------------------
+    // Ahora, agregamos este nuevo método para devolver el listado
+    // de recetas con alias del creador y promedio de rating
+    // ------------------------------------------------------------
+    public List<RecipeSummaryResponse> getAllRecipesWithAverage() {
+        // Ahora traemos TODAS las recetas, sin importar su estado
+        List<Recipe> recipes = recipeRepository.findAll();
+
+        return recipes.stream()
+                .map(recipe -> {
+                    String aliasCreador = recipe.getUsuarioCreador().getAlias();
+                    Double avg = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
+                    Double promedio = (avg != null) ? avg : 0.0;
+
+                    return new RecipeSummaryResponse(
+                            recipe.getId(),
+                            recipe.getNombre(),
+                            recipe.getDescripcion(),
+                            recipe.getFotoPrincipal(),
+                            recipe.getTiempo(),
+                            recipe.getPorciones(),
+                            recipe.getTipoPlato().name(),
+                            recipe.getCategoria().name(),
+                            aliasCreador,
+                            promedio
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    // -----------------------------------------------
+    // Métodos existentes para búsquedas y actualizaciones
+    // -----------------------------------------------
     public List<Recipe> getRecipesByIngredient(String ingredientName) {
         return recipeRepository.findRecipesByIngredient(ingredientName);
     }
