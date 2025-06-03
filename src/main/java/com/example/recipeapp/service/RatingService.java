@@ -8,13 +8,13 @@ import com.example.recipeapp.payload.RatingResponse;
 import com.example.recipeapp.repository.RatingRepository;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,15 +29,16 @@ public class RatingService {
 
     /**
      * Agrega un rating para una receta.
-     * Si el usuario ya ha calificado esa receta, lanza una excepción con un mensaje indicándolo.
+     * Si el usuario ya ha calificado esa receta, elimina el rating anterior y guarda el nuevo.
      */
+    @Transactional
     public RatingResponse addRatingFromRequest(CreateRatingRequest request) {
-        // Obtener el usuario autenticado desde el contexto
+        // Obtener al usuario autenticado
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario autenticado no encontrado"));
 
-        // Buscar receta
+        // Buscar la receta
         Recipe recipe = recipeRepository.findById(request.getRecipeId())
                 .orElseThrow(() -> new RuntimeException("Receta no encontrada"));
 
@@ -46,12 +47,11 @@ public class RatingService {
             throw new IllegalArgumentException("El valor de puntos debe estar entre 1 y 5.");
         }
 
-        // Verificar si ya existe un rating de ese user para esa receta
-        ratingRepository.findByUserIdAndRecipeId(user.getId(), recipe.getId()).ifPresent(r -> {
-            throw new RuntimeException("El usuario ya ha calificado esta receta.");
-        });
+        // Si ya existe un rating de este usuario para esta receta, elimínalo
+        ratingRepository.findByUserIdAndRecipeId(user.getId(), recipe.getId())
+                .ifPresent(existingRating -> ratingRepository.deleteById(existingRating.getId()));
 
-        // Crear y guardar
+        // Crear y guardar el nuevo rating
         Rating rating = new Rating();
         rating.setUser(user);
         rating.setRecipe(recipe);
@@ -59,7 +59,8 @@ public class RatingService {
         rating.setComentario(request.getComentario());
         rating.setFecha(LocalDateTime.now());
 
-        return mapToDTO(ratingRepository.save(rating));
+        Rating saved = ratingRepository.save(rating);
+        return mapToDTO(saved);
     }
 
     public List<RatingResponse> getRatingsDTOByRecipeId(Long recipeId) {
@@ -80,9 +81,8 @@ public class RatingService {
         return dto;
     }
 
-
     public Rating updateRating(Rating rating) {
-        // Puedes agregar validaciones adicionales si se requiere
+        // Guarda cambios si quieres actualizar campos puntualmente
         return ratingRepository.save(rating);
     }
 

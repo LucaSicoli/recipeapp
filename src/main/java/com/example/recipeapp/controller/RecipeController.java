@@ -1,6 +1,7 @@
 package com.example.recipeapp.controller;
 
 import com.example.recipeapp.model.*;
+import com.example.recipeapp.payload.RecipeDetailResponse;
 import com.example.recipeapp.payload.RecipeRequest;
 import com.example.recipeapp.payload.RecipeSummaryResponse;
 import com.example.recipeapp.service.IngredientService;
@@ -52,9 +53,10 @@ public class RecipeController {
 
     // Obtener una receta por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Recipe> getRecipeById(@PathVariable Long id) {
-        Optional<Recipe> recipe = recipeService.getRecipeByIdWithCreator(id); // Usa el método join fetch
-        return recipe.map(ResponseEntity::ok)
+    public ResponseEntity<RecipeDetailResponse> getRecipeById(@PathVariable Long id) {
+        Optional<RecipeDetailResponse> dtoOpt = recipeService.getRecipeDetailWithAverage(id);
+        return dtoOpt
+                .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

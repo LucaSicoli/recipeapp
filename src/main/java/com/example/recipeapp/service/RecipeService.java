@@ -4,10 +4,7 @@ import com.example.recipeapp.factory.RecipeFactory;
 import com.example.recipeapp.model.EstadoAprobacion;
 import com.example.recipeapp.model.Recipe;
 import com.example.recipeapp.model.User;
-import com.example.recipeapp.payload.RecipeSummaryResponse;
-import com.example.recipeapp.payload.RecipeRequest;
-import com.example.recipeapp.payload.RecipeIngredientRequest;
-import com.example.recipeapp.payload.RecipeStepRequest;
+import com.example.recipeapp.payload.*;
 import com.example.recipeapp.repository.RatingRepository;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
@@ -126,6 +123,23 @@ public class RecipeService {
     @Transactional
     public void deleteAllRecipes() {
         recipeRepository.deleteAll();
+    }
+
+    public Optional<RecipeDetailResponse> getRecipeDetailWithAverage(Long id) {
+        // 1) Buscar la receta con join al usuario creador, ingredientes y pasos
+        Optional<Recipe> recipeOpt = recipeRepository.findByIdWithUsuarioCreador(id);
+        if (recipeOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Recipe receta = recipeOpt.get();
+
+        // 2) Calcular promedio de rating (puede devolver null si no hay ratings)
+        Double avg = ratingRepository.findAverageRatingByRecipeId(id);
+        Double promedio = (avg != null) ? avg : 0.0;
+
+        // 3) Mapeamos a DTO
+        RecipeDetailResponse dto = RecipeDetailResponse.fromEntity(receta, promedio);
+        return Optional.of(dto);
     }
 
     public List<Recipe> getRecipesByEstado(String estado) {
