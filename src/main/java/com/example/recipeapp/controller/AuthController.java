@@ -1,46 +1,72 @@
+// src/main/java/com/example/recipeapp/controller/AuthController.java
 package com.example.recipeapp.controller;
 
-import com.example.recipeapp.payload.JwtResponse;
-import com.example.recipeapp.payload.LoginRequest;
+import com.example.recipeapp.payload.*;
+import com.example.recipeapp.service.PasswordResetService;
+import com.example.recipeapp.service.UserService;
 import com.example.recipeapp.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.authentication.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    @Autowired private UserService userService;
+    @Autowired private PasswordResetService resetService;
+    @Autowired private AuthenticationManager authManager;
+    @Autowired private JwtUtil jwtUtil;
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    // ————— Registro —————
+    @PostMapping("/register")
+    public ResponseEntity<Void> register(@RequestBody RegisterRequest req) {
+        userService.iniciarRegistro(req.email(), req.alias());
+        return ResponseEntity.accepted().build();
+    }
 
+    @PostMapping("/register/confirm")
+    public ResponseEntity<Void> confirm(
+            @RequestBody ConfirmRequest req,
+            @RequestParam String email,
+            @RequestParam String code
+    ) {
+        userService.completarRegistro(email, code, req.password());
+        return ResponseEntity.ok().build();
+    }
+
+    // ————— Login —————
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest loginRequest) {
-        // Verifica que se hayan enviado email, alias y password
-        if (loginRequest.getEmail() == null || loginRequest.getEmail().isEmpty() ||
-                loginRequest.getAlias() == null || loginRequest.getAlias().isEmpty() ||
-                loginRequest.getPassword() == null || loginRequest.getPassword().isEmpty()) {
-            throw new IllegalArgumentException("Email, alias y password son requeridos");
-        }
-
-        // Construir el identificador compuesto: "email|alias"
-        String compoundIdentifier = loginRequest.getEmail() + "|" + loginRequest.getAlias();
-
-        // Autenticación: si falla, se lanzará AuthenticationException
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(compoundIdentifier, loginRequest.getPassword())
+    public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest req) {
+        authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        req.getEmail() + "|" + req.getAlias(),
+                        req.getPassword()
+                )
         );
-        System.out.println("Usuario autenticado: " + authentication.getName());
+        String token = jwtUtil.generateJwtToken(req.getEmail() + "|" + req.getAlias());
+        return ResponseEntity.ok(new JwtResponse(token));
+    }
 
-        // Genera el token JWT usando el identificador compuesto
-        String jwt = jwtUtil.generateJwtToken(compoundIdentifier);
-        return ResponseEntity.ok(new JwtResponse(jwt));
+    // ————— Reset contraseña —————
+    @PostMapping("/request-reset")
+    public ResponseEntity<Void> requestReset(@RequestBody EmailDTO dto) {
+        resetService.requestReset(dto.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/verify-reset-code")
+    public ResponseEntity<Void> verify(@RequestBody CodeDTO dto) {
+        resetService.verifyCode(dto.email(), dto.code());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> reset(@RequestBody ResetDTO dto) {
+        if (!dto.newPassword().equals(dto.confirmPassword()))
+            return ResponseEntity.badRequest().build();
+        resetService.resetPassword(dto.email(), dto.code(), dto.newPassword());
+        return ResponseEntity.ok().build();
     }
 }
