@@ -61,19 +61,13 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // haces públicos todos los endpoints de auth que no necesitan token
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/auth/login",
-                                "/api/auth/request-reset",
-                                "/api/auth/verify-reset-code",
-                                "/api/auth/reset-password"
-                        ).permitAll()
-
-                        // sigue público tu endpoint de imágenes
+                        // login / reset siguen públicos
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // imágenes públicas
                         .requestMatchers("/images/**").permitAll()
-
-                        // todo lo demás requiere JWT
+                        // permitimos que TODOS (alumnos o visitantes) puedan hacer GET a /recipes/**
+                        .requestMatchers(HttpMethod.GET, "/recipes/**").permitAll()
+                        // resto de métodos (POST, PUT, DELETE) sí requieren JWT
                         .anyRequest().authenticated()
                 )
 
@@ -83,6 +77,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
 
     // Exponemos el AuthenticationManager para inyectarlo en otros componentes si es necesario

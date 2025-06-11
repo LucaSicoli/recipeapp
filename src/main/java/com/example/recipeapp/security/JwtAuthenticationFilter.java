@@ -7,8 +7,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -23,13 +25,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Aquí indicamos que NO queremos filtrar las rutas públicas
+     * NO filtrar:
+     *  - /api/auth/**
+     *  - /images/**
+     *  - GET a /recipes/**
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/api/auth/")
-                || path.startsWith("/images/");
+        String method = request.getMethod();
+        if (path.startsWith("/api/auth/") || path.startsWith("/images/")) {
+            return true;
+        }
+        if ("GET".equalsIgnoreCase(method) && path.startsWith("/recipes")) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -37,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        // Si llegamos aquí, es una ruta que SÍ debe pasar por JWT
+        // Si llegamos aquí, es una ruta protegida: buscar JWT
         String jwt = parseJwt(request);
         if (jwt == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -56,8 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 userDetails, null, userDetails.getAuthorities()
                         );
                 auth.setDetails(
-                        new org.springframework.security.web.authentication.
-                                WebAuthenticationDetailsSource()
+                        new WebAuthenticationDetailsSource()
                                 .buildDetails(request)
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
@@ -71,7 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Si todo OK, seguimos la cadena
+        // Token válido → permitimos continuar
         filterChain.doFilter(request, response);
     }
 
