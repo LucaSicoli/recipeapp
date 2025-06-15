@@ -40,6 +40,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if ("GET".equalsIgnoreCase(method) && path.startsWith("/recipes")) {
             return true;
         }
+
+        if ("GET".equalsIgnoreCase(method) && path.startsWith("/ratings")) {
+            return true;
+        }
+
         return false;
     }
 

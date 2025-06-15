@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .requestMatchers("/images/**").permitAll()
                         // permitimos que TODOS (alumnos o visitantes) puedan hacer GET a /recipes/**
                         .requestMatchers(HttpMethod.GET, "/recipes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/ratings/**").permitAll()
                         // resto de métodos (POST, PUT, DELETE) sí requieren JWT
                         .anyRequest().authenticated()
                 )
