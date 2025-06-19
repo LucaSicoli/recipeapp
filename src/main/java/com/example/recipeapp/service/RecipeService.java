@@ -112,6 +112,10 @@ public class RecipeService {
         return recipeRepository.findById(id);
     }
 
+    public int countRecipesUser(Long id) {
+        return recipeRepository.countByUsuarioCreadorId(id);
+    }
+
     public Recipe updateRecipe(Recipe recipe) {
         return recipeRepository.save(recipe);
     }
@@ -146,4 +150,56 @@ public class RecipeService {
         EstadoAprobacion estadoEnum = EstadoAprobacion.valueOf(estado.toUpperCase());
         return recipeRepository.findByEstado(estadoEnum);
     }
+
+    public List<RecipeSummaryResponse> getRecipesForCurrentUser() {
+        // Obtener el identificador compuesto del contexto de seguridad
+        String compoundIdentifier = SecurityContextHolder.getContext().getAuthentication().getName();
+        //log.info("Identificador compuesto del token JWT: {}", compoundIdentifier);
+
+        // Separar el email del identificador
+        String[] parts = compoundIdentifier.split("\\|");
+        if (parts.length < 1) {
+            throw new RuntimeException("Identificador de usuario inválido");
+        }
+
+        String email = parts[0];
+        //log.info("Email extraído: {}", email);
+
+        System.out.println(email + " getRecipesForCurrentUser Recipe service");
+        // Buscar al usuario solo por email
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado con email: " + email);
+        }
+
+        User user = userOpt.get();
+        System.out.println("Usuario encontrado Recipe Service: id={} alias={}" + user.getId() +' '+ user.getAlias());
+
+        // Obtener recetas creadas por el usuario
+        List<Recipe> recipes = recipeRepository.findByUsuarioCreador(user.getId());
+        //log.info("Cantidad de recetas encontradas: {}", recipes.size());
+
+        // Transformar a RecipeSummaryResponse
+        return recipes.stream()
+                .map(recipe -> {
+                    Double avg = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
+                    Double promedio = (avg != null) ? avg : 0.0;
+
+                    return new RecipeSummaryResponse(
+                            recipe.getId(),
+                            recipe.getNombre(),
+                            recipe.getDescripcion(),
+                            recipe.getFotoPrincipal(),
+                            recipe.getTiempo(),
+                            recipe.getPorciones(),
+                            recipe.getTipoPlato().name(),
+                            recipe.getCategoria().name(),
+                            user.getAlias(), // ⚠️ OK que uses el alias aquí para mostrarlo, pero no para buscar
+                            promedio
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+
 }

@@ -37,6 +37,8 @@ public class JwtUtil {
                 .getSubject();
     }
 
+
+
     // Valida el token JWT
     public boolean validateJwtToken(String authToken) {
         try {

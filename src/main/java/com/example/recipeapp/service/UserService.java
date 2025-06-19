@@ -1,7 +1,10 @@
 package com.example.recipeapp.service;
 
 import com.example.recipeapp.model.User;
+import com.example.recipeapp.repository.RatingRepository;
+import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
+import com.example.recipeapp.repository.UserSavedRecipeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +16,15 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RecipeRepository recipeRepository;
+
+    @Autowired
+    private UserSavedRecipeRepository userSavedRecipeRepository;
+
+    @Autowired
+    private RatingRepository ratingRepository;
 
     public User createUser(User user) {
         user.setFechaCreacion(LocalDateTime.now());
@@ -33,7 +45,11 @@ public class UserService {
         return userRepository.save(user);
     }
 
+
+
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
     }
+
+
 }

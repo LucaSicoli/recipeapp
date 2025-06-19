@@ -93,4 +93,8 @@ public class RatingService {
     public void removeRating(Long id) {
         ratingRepository.deleteById(id);
     }
+
+    public int countResenasPublicadas(Long userId) {
+        return ratingRepository.countByUserId(userId);
+    }
 }

@@ -31,4 +31,11 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     @Query("SELECT r FROM Recipe r JOIN FETCH r.usuarioCreador WHERE r.id = :id")
     Optional<Recipe> findByIdWithUsuarioCreador(@Param("id") Long id);
+
+    @Query("SELECT r FROM Recipe r JOIN FETCH r.usuarioCreador WHERE r.id = :id")
+    List<Recipe> findByUsuarioCreador(Long user);
+
+    @Query("SELECT COUNT(r) FROM Recipe r WHERE r.usuarioCreador.id = :userId")
+    int countByUsuarioCreadorId(@Param("userId") Long userId);
+
 }

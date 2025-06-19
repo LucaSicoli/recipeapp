@@ -93,4 +93,11 @@ public class RecipeController {
         List<RecipeSummaryResponse> dtos = recipeService.getAllRecipesWithAverage();
         return ResponseEntity.ok(dtos);
     }
+
+    @GetMapping("/my-recipes")
+    public ResponseEntity<List<RecipeSummaryResponse>> getMyRecipes() {
+        List<RecipeSummaryResponse> myRecipes = recipeService.getRecipesForCurrentUser();
+        return ResponseEntity.ok(myRecipes);
+    }
+
 }

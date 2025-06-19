@@ -60,4 +60,8 @@ public class UserSavedRecipeService {
     public void removeUserSavedRecipe(Long id) {
         userSavedRecipeRepository.deleteById(id);
     }
+
+    public int countSavedRecipes(Long userId) {
+        return userSavedRecipeRepository.countByUserId(userId);
+    }
 }

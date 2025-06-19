@@ -18,4 +18,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     // Calcular el promedio de ratings para una receta
     @Query("SELECT AVG(r.puntos) FROM Rating r WHERE r.recipe.id = :recipeId")
     Double findAverageRatingByRecipeId(@Param("recipeId") Long recipeId);
+
+    @Query("SELECT COUNT(r) FROM Rating r WHERE r.user.id = :userId")
+    int countByUserId(@Param("userId") Long userId);
 }

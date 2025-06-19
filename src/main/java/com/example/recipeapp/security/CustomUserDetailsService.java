@@ -27,7 +27,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
         String email = parts[0];
         String alias = parts[1];
-        Optional<User> userOpt = userRepository.findByEmailAndAlias(email, alias);
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
         User appUser = userOpt.orElseThrow(() ->
                 new UsernameNotFoundException("No se encontró el usuario con email " + email + " y alias " + alias)
         );
