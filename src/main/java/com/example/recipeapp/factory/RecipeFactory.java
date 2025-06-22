@@ -32,7 +32,7 @@ public class RecipeFactory {
         recipe.setDescripcion(request.getDescripcion());
         recipe.setTiempo(request.getTiempo());
         recipe.setPorciones(request.getPorciones());
-        recipe.setFotoPrincipal(request.getFotoPrincipal());
+        recipe.setMediaUrls(request.getMediaUrls());
         recipe.setCategoria(Categoria.valueOf(request.getCategoria().toUpperCase()));
         recipe.setTipoPlato(TipoPlato.valueOf(request.getTipoPlato().toUpperCase()));
 

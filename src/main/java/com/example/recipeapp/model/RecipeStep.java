@@ -3,6 +3,9 @@ package com.example.recipeapp.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,7 +27,10 @@ public class RecipeStep {
     private String descripcion;
 
     // URL para una imagen o video del paso, almacenado externamente.
-    private String urlMedia; // list<String>
+    @ElementCollection
+    @CollectionTable(name = "step_media", joinColumns = @JoinColumn(name = "step_id"))
+    @Column(name = "url")
+    private List<String> mediaUrls = new ArrayList<>();
 
     private String titulo;
 

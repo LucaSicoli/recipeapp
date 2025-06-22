@@ -63,26 +63,27 @@ public class RecipeService {
     // de recetas con alias del creador y promedio de rating
     // ------------------------------------------------------------
     public List<RecipeSummaryResponse> getAllRecipesWithAverage() {
-        // Ahora traemos TODAS las recetas, sin importar su estado
         List<Recipe> recipes = recipeRepository.findAll();
-
         return recipes.stream()
                 .map(recipe -> {
-                    String aliasCreador = recipe.getUsuarioCreador().getAlias();
+                    String alias = recipe.getUsuarioCreador().getAlias();
                     Double avg = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
-                    Double promedio = (avg != null) ? avg : 0.0;
+                    // En el summary quizá quieras sólo la primera URL como “thumb”
+                    String thumb = recipe.getMediaUrls().isEmpty()
+                            ? null
+                            : recipe.getMediaUrls().get(0);
 
                     return new RecipeSummaryResponse(
                             recipe.getId(),
                             recipe.getNombre(),
                             recipe.getDescripcion(),
-                            recipe.getFotoPrincipal(),
+                            recipe.getMediaUrls(),                 // en lugar de fotoPrincipal
                             recipe.getTiempo(),
                             recipe.getPorciones(),
                             recipe.getTipoPlato().name(),
                             recipe.getCategoria().name(),
-                            aliasCreador,
-                            promedio
+                            alias,
+                            (avg != null) ? avg : 0.0
                     );
                 })
                 .collect(Collectors.toList());

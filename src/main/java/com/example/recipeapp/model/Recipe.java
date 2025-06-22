@@ -43,7 +43,10 @@ public class Recipe {
     @JsonSerialize(using = UserSimpleSerializer.class)
     private User usuarioCreador;
 
-    private String fotoPrincipal;
+    @ElementCollection
+    @CollectionTable(name = "recipe_media", joinColumns = @JoinColumn(name = "recipe_id"))
+    @Column(name = "url")
+    private List<String> mediaUrls = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private Categoria categoria;

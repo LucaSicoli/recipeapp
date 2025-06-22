@@ -12,11 +12,15 @@ public class RecipeStepFactory {
         RecipeStep step = new RecipeStep();
         // Asocia la receta
         step.setRecipe(recipe);
-        // Asigna el número de paso, descripción, URL de media y título
+
+        // Número de paso y título/descripcion igual que antes
         step.setNumeroPaso(stepReq.getNumeroPaso());
-        step.setDescripcion(stepReq.getDescripcion());
-        step.setUrlMedia(stepReq.getUrlMedia());
         step.setTitulo(stepReq.getTitulo());
+        step.setDescripcion(stepReq.getDescripcion());
+
+        // Ahora mediaUrls es List<String>, no un String
+        step.setMediaUrls(stepReq.getMediaUrls());
+
         return step;
     }
 }
