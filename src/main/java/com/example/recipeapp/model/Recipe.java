@@ -38,13 +38,19 @@ public class Recipe {
     @Enumerated(EnumType.STRING)
     private EstadoAprobacion estado;
 
+    @Enumerated(EnumType.STRING)
+    private EstadoPublicacion estadoPublicacion = EstadoPublicacion.BORRADOR;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_creador_id", nullable = false)
     @JsonSerialize(using = UserSimpleSerializer.class)
     private User usuarioCreador;
 
-    @ElementCollection
-    @CollectionTable(name = "recipe_media", joinColumns = @JoinColumn(name = "recipe_id"))
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "recipe_media",
+            joinColumns = @JoinColumn(name = "recipe_id")
+    )
     @Column(name = "url")
     private List<String> mediaUrls = new ArrayList<>();
 

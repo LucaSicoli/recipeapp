@@ -1,6 +1,7 @@
 package com.example.recipeapp.repository;
 
 import com.example.recipeapp.model.EstadoAprobacion;
+import com.example.recipeapp.model.EstadoPublicacion;
 import com.example.recipeapp.model.Recipe;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -31,4 +32,10 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
 
     @Query("SELECT r FROM Recipe r JOIN FETCH r.usuarioCreador WHERE r.id = :id")
     Optional<Recipe> findByIdWithUsuarioCreador(@Param("id") Long id);
+
+    List<Recipe> findByEstadoPublicacion(EstadoPublicacion estadoPublicacion);
+
+    // Todas las recetas de un usuario en un estado dado:
+    List<Recipe> findByUsuarioCreadorIdAndEstadoPublicacion(Long usuarioId,
+                                                            EstadoPublicacion estadoPublicacion);
 }

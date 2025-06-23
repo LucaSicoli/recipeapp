@@ -43,4 +43,6 @@ public class User {
     @JsonIgnore
     private List<UserSavedRecipe> savedRecipes = new ArrayList<>();
 
+
+
 }
