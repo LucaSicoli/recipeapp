@@ -53,7 +53,8 @@ public class UserSavedRecipeService {
         dto.setId(usr.getId());
         dto.setRecipeId(usr.getRecipe().getId());
         dto.setRecipeNombre(usr.getRecipe().getNombre());
-        dto.setFechaAgregado(usr.getFechaAgregado());
+        // ← aquí conviertes LocalDateTime a String
+        dto.setFechaAgregado(usr.getFechaAgregado().toString());
         return dto;
     }
 

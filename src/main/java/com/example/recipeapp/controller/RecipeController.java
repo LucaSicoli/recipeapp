@@ -4,6 +4,7 @@ import com.example.recipeapp.model.Recipe;
 import com.example.recipeapp.payload.RecipeDetailResponse;
 import com.example.recipeapp.payload.RecipeRequest;
 import com.example.recipeapp.payload.RecipeSummaryResponse;
+import com.example.recipeapp.payload.UserSavedRecipeDTO;
 import com.example.recipeapp.service.RecipeService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,4 +120,11 @@ public class RecipeController {
                 recipeService.getLatestApprovedPublishedSummaries()
         );
     }
+
+    @GetMapping("/saved")
+    public ResponseEntity<List<UserSavedRecipeDTO>> listSavedRecipes() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(recipeService.getMySavedRecipesSummary(email));
+    }
+
 }

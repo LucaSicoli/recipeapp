@@ -66,7 +66,21 @@ public class SecurityConfig {
                         // imágenes públicas
                         .requestMatchers("/images/**").permitAll()
                         // permitimos que TODOS (alumnos o visitantes) puedan hacer GET a /recipes/**
-                        .requestMatchers(HttpMethod.GET, "/recipes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/recipes",                    // listado general
+                                "/recipes/summary",            // resumen home
+                                "/recipes/{id:\\d+}",          // detalle con promedio
+                                "/recipes/{id:\\d+}/full",     // detalle con creador
+                                "/recipes/estado/**"           // filtrado por estado
+                        ).permitAll()
+
+                        // estas REQUIEREN JWT:
+                        .requestMatchers(HttpMethod.GET,
+                                "/recipes/drafts",             // tus borradores
+                                "/recipes/saved"               // tus guardadas
+                        ).authenticated()
+
+                        // ratings públicos
                         .requestMatchers(HttpMethod.GET, "/ratings/**").permitAll()
                         // resto de métodos (POST, PUT, DELETE) sí requieren JWT
                         .anyRequest().authenticated()

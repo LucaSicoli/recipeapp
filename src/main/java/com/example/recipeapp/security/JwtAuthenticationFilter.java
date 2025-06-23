@@ -34,17 +34,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         String method = request.getMethod();
+
+        // auth y estáticas
         if (path.startsWith("/api/auth/") || path.startsWith("/images/")) {
             return true;
         }
-        if ("GET".equalsIgnoreCase(method) && path.startsWith("/recipes")) {
-            return true;
+
+        // GET públicas de recetas
+        if ("GET".equalsIgnoreCase(method)) {
+            if (path.equals("/recipes") ||
+                    path.equals("/recipes/summary") ||
+                    path.matches("/recipes/\\d+$") ||
+                    path.matches("/recipes/\\d+/full$") ||
+                    path.startsWith("/recipes/estado/") ) {
+                return true;
+            }
+            // **NO** devolvemos true para /recipes/drafts ni /recipes/saved
         }
 
+        // GET públicas de ratings
         if ("GET".equalsIgnoreCase(method) && path.startsWith("/ratings")) {
             return true;
         }
 
+        // resto: sí filtrar (requieren JWT)
         return false;
     }
 

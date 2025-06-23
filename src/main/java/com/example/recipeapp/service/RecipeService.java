@@ -1,14 +1,12 @@
 package com.example.recipeapp.service;
 
 import com.example.recipeapp.factory.RecipeFactory;
-import com.example.recipeapp.model.EstadoAprobacion;
-import com.example.recipeapp.model.EstadoPublicacion;
-import com.example.recipeapp.model.Recipe;
-import com.example.recipeapp.model.User;
+import com.example.recipeapp.model.*;
 import com.example.recipeapp.payload.*;
 import com.example.recipeapp.repository.RatingRepository;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
+import com.example.recipeapp.repository.UserSavedRecipeRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,6 +38,9 @@ public class RecipeService {
 
     @Autowired
     private RecipeFactory recipeFactory;  // Inyectamos el RecipeFactory
+
+    @Autowired
+    private UserSavedRecipeRepository userSavedRecipeRepository;
 
     // ------------------------------------------------------------
     // Método existente: crear una receta a partir de RecipeRequest
@@ -211,5 +212,19 @@ public class RecipeService {
                 r.getCategoria().name(), r.getUsuarioCreador().getAlias(),
                 ratingRepository.findAverageRatingByRecipeId(r.getId())
         )).toList();
+    }
+
+    public List<UserSavedRecipeDTO> getMySavedRecipesSummary(String email) {
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        List<UserSavedRecipe> list = userSavedRecipeRepository.findByUserId(u.getId());
+        return list.stream()
+                .map(sr -> new UserSavedRecipeDTO(
+                        sr.getId(),                                // <-- este es el id del registro “guardado”
+                        sr.getRecipe().getId(),                    // recipeId
+                        sr.getRecipe().getNombre(),                // recipeNombre
+                        sr.getFechaAgregado().toString()           // fechaAgregado como String
+                ))
+                .collect(Collectors.toList());
     }
 }
