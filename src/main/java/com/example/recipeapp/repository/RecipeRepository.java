@@ -38,4 +38,9 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     // Todas las recetas de un usuario en un estado dado:
     List<Recipe> findByUsuarioCreadorIdAndEstadoPublicacion(Long usuarioId,
                                                             EstadoPublicacion estadoPublicacion);
+
+    List<Recipe> findTop3ByEstadoAndEstadoPublicacionOrderByFechaCreacionDesc(
+            EstadoAprobacion estado,
+            EstadoPublicacion estadoPublicacion
+    );
 }

@@ -45,19 +45,20 @@ public class RecipeService {
     // Método existente: crear una receta a partir de RecipeRequest
     // ------------------------------------------------------------
     public Recipe createRecipe(RecipeRequest request) {
-        Recipe recipe = recipeFactory.createRecipeFromRequest(request);
-        recipe.setFechaCreacion(LocalDateTime.now());
-        recipe.setEstado(EstadoAprobacion.PENDIENTE);
+        Recipe r = recipeFactory.createRecipeFromRequest(request);
+        r.setFechaCreacion(LocalDateTime.now());
+        // estado de aprobación siempre PENDIENTE (correcto)
+        r.setEstado(EstadoAprobacion.PENDIENTE);
+        // PUBLICAMOS directamente:
+        r.setEstadoPublicacion(EstadoPublicacion.PUBLICADO);
 
+        // asignamos creador…
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        Optional<User> optionalUser = userRepository.findByEmail(email);
-        if (optionalUser.isPresent()) {
-            recipe.setUsuarioCreador(optionalUser.get());
-        } else {
-            throw new RuntimeException("Usuario autenticado no encontrado en la base de datos");
-        }
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        r.setUsuarioCreador(u);
 
-        return recipeRepository.save(recipe);
+        return recipeRepository.save(r);
     }
 
     // ------------------------------------------------------------
@@ -151,19 +152,17 @@ public class RecipeService {
     }
 
     public Recipe saveDraftFromRequest(String email, RecipeRequest request) {
-        // 1) convertir el DTO en entidad
         Recipe draft = recipeFactory.createRecipeFromRequest(request);
-
-        // 2) setear campos comunes
         draft.setFechaCreacion(LocalDateTime.now());
+        // marcamos este draft como borrador
         draft.setEstadoPublicacion(EstadoPublicacion.BORRADOR);
+        // ¡muy importante! dejamos el estado de aprobación también en PENDIENTE
+        draft.setEstado(EstadoAprobacion.PENDIENTE);
 
-        // 3) asignar User por email
         User u = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         draft.setUsuarioCreador(u);
 
-        // 4) persistir
         return recipeRepository.save(draft);
     }
 
@@ -199,5 +198,18 @@ public class RecipeService {
                         ratingRepository.findAverageRatingByRecipeId(r.getId())
                 ))
                 .collect(Collectors.toList());
+    }
+
+    public List<RecipeSummaryResponse> getLatestApprovedPublishedSummaries() {
+        var recipes = recipeRepository.findTop3ByEstadoAndEstadoPublicacionOrderByFechaCreacionDesc(
+                EstadoAprobacion.APROBADO,
+                EstadoPublicacion.PUBLICADO
+        );
+        return recipes.stream().map(r -> new RecipeSummaryResponse(
+                r.getId(), r.getNombre(), r.getDescripcion(), r.getMediaUrls(),
+                r.getTiempo(), r.getPorciones(), r.getTipoPlato().name(),
+                r.getCategoria().name(), r.getUsuarioCreador().getAlias(),
+                ratingRepository.findAverageRatingByRecipeId(r.getId())
+        )).toList();
     }
 }

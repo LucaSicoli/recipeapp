@@ -115,7 +115,8 @@ public class RecipeController {
     // 12) Nuevo: resumen de todas las recetas con alias de creador y promedio de rating
     @GetMapping("/summary")
     public ResponseEntity<List<RecipeSummaryResponse>> getAllRecipesSummary() {
-        List<RecipeSummaryResponse> summaries = recipeService.getAllRecipesWithAverage();
-        return ResponseEntity.ok(summaries);
+        return ResponseEntity.ok(
+                recipeService.getLatestApprovedPublishedSummaries()
+        );
     }
 }
