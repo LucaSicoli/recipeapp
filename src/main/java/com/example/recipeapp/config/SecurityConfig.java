@@ -80,6 +80,8 @@ public class SecurityConfig {
                                 "/recipes/saved"               // tus guardadas
                         ).authenticated()
 
+                        .requestMatchers(HttpMethod.GET, "/recipes/created").authenticated()
+
                         // ratings públicos
                         .requestMatchers(HttpMethod.GET, "/ratings/**").permitAll()
                         // resto de métodos (POST, PUT, DELETE) sí requieren JWT

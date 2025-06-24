@@ -127,4 +127,11 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.getMySavedRecipesSummary(email));
     }
 
+    @GetMapping("/created")
+    public ResponseEntity<List<RecipeSummaryResponse>> listMyPublished() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<RecipeSummaryResponse> list = recipeService.getMyPublishedSummaries(email);
+        return ResponseEntity.ok(list);
+    }
+
 }

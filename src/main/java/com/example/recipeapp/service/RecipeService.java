@@ -227,4 +227,26 @@ public class RecipeService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    public List<RecipeSummaryResponse> getMyPublishedSummaries(String email) {
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        List<Recipe> recipes = recipeRepository
+                .findByUsuarioCreadorIdAndEstadoPublicacion(u.getId(), EstadoPublicacion.PUBLICADO);
+        return recipes.stream()
+                .map(r -> new RecipeSummaryResponse(
+                        r.getId(),
+                        r.getNombre(),
+                        r.getDescripcion(),
+                        r.getMediaUrls(),
+                        r.getTiempo(),
+                        r.getPorciones(),
+                        r.getTipoPlato().name(),
+                        r.getCategoria().name(),
+                        r.getUsuarioCreador().getAlias(),
+                        ratingRepository.findAverageRatingByRecipeId(r.getId())
+                ))
+                .collect(Collectors.toList());
+    }
+
 }
