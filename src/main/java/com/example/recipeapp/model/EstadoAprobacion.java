@@ -4,5 +4,6 @@ public enum EstadoAprobacion
 {
     PENDIENTE,
     APROBADO,
-    RECHAZADO
+    RECHAZADO,
+    PUBLICACION
 }

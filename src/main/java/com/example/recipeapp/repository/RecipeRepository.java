@@ -38,4 +38,8 @@ public interface RecipeRepository extends JpaRepository<Recipe, Long> {
     @Query("SELECT COUNT(r) FROM Recipe r WHERE r.usuarioCreador.id = :userId")
     int countByUsuarioCreadorId(@Param("userId") Long userId);
 
+
+    @Query("SELECT r FROM Recipe r WHERE r.usuarioCreador.id = :userId AND r.estado = :estado")
+    List<Recipe> findByUsuarioCreadorDrafts(@Param("userId") Long userId, @Param("estado") EstadoAprobacion estado);
+
 }

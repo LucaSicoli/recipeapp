@@ -100,4 +100,12 @@ public class RecipeController {
         return ResponseEntity.ok(myRecipes);
     }
 
+    @GetMapping("/drafts")
+    public ResponseEntity<List<RecipeSummaryResponse>> getMyDraftRecipes() {
+        List<RecipeSummaryResponse> drafts = recipeService.findByUsuarioCreadorDrafts(EstadoAprobacion.PUBLICACION);
+        return ResponseEntity.ok(drafts);
+    }
+
+
+
 }
