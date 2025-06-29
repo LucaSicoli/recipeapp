@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -54,5 +55,10 @@ public class RatingController {
         Double avg = ratingService.getAverageRatingForRecipe(recipeId);
         // Puedes retornar 0.0 en caso de que no haya ratings, si lo prefieres
         return new ResponseEntity<>(avg != null ? avg : 0.0, HttpStatus.OK);
+    }
+
+    @GetMapping("/count/me")
+    public long countMyReviews(Principal principal) {
+        return ratingService.countByCurrentUser(principal.getName());
     }
 }

@@ -42,19 +42,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // GET públicas de recetas
         if ("GET".equalsIgnoreCase(method)) {
-            if (path.equals("/recipes") ||
-                    path.equals("/recipes/summary") ||
-                    path.matches("/recipes/\\d+$") ||
-                    path.matches("/recipes/\\d+/full$") ||
-                    path.matches("/recipes/\\d+/full$") ||
-                    path.startsWith("/recipes/estado/") ) {
+            if (path.equals("/recipes")
+                    || path.equals("/recipes/summary")
+                    || path.matches("/recipes/\\d+$")
+                    || path.matches("/recipes/\\d+/full$")
+                    || path.startsWith("/recipes/estado/")) {
                 return true;
             }
-            // **NO** devolvemos true para /recipes/drafts ni /recipes/saved
+            // 3) SÓLO esta ruta de ratings debe ser pública:
+            if (path.matches("/ratings/recipe/\\d+")) {
+                return true;
+            }
         }
 
+
+
         // GET públicas de ratings
-        if ("GET".equalsIgnoreCase(method) && path.startsWith("/ratings")) {
+        if ("GET".equalsIgnoreCase(method) &&
+                path.matches("/ratings/recipe/\\d+$")) {
             return true;
         }
 

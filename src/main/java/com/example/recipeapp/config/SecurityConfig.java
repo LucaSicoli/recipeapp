@@ -85,6 +85,8 @@ public class SecurityConfig {
 
                         // ratings públicos
                         .requestMatchers(HttpMethod.GET, "/ratings/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/ratings/count/me").authenticated()
                         // resto de métodos (POST, PUT, DELETE) sí requieren JWT
                         .anyRequest().authenticated()
                 )
