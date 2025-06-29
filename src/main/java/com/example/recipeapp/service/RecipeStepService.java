@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+// en RecipeStepService.java
 @Service
 public class RecipeStepService {
-
     @Autowired
     private RecipeStepRepository recipeStepRepository;
 
@@ -27,5 +27,12 @@ public class RecipeStepService {
 
     public void removeRecipeStep(Long id) {
         recipeStepRepository.deleteById(id);
+    }
+
+    // ← Nuevo método:
+    public void deleteByRecipeId(Long recipeId) {
+        recipeStepRepository
+                .findByRecipeIdOrderByNumeroPasoAsc(recipeId)
+                .forEach(recipeStepRepository::delete);
     }
 }

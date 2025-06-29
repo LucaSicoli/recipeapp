@@ -9,7 +9,6 @@ import java.util.List;
 
 @Service
 public class RecipeIngredientService {
-
     @Autowired
     private RecipeIngredientRepository recipeIngredientRepository;
 
@@ -27,5 +26,12 @@ public class RecipeIngredientService {
 
     public void removeRecipeIngredient(Long id) {
         recipeIngredientRepository.deleteById(id);
+    }
+
+    // ← Nuevo método:
+    public void deleteByRecipeId(Long recipeId) {
+        recipeIngredientRepository
+                .findByRecipeId(recipeId)
+                .forEach(recipeIngredientRepository::delete);
     }
 }

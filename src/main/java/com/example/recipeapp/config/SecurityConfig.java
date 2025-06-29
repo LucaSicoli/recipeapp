@@ -77,7 +77,8 @@ public class SecurityConfig {
                         // estas REQUIEREN JWT:
                         .requestMatchers(HttpMethod.GET,
                                 "/recipes/drafts",             // tus borradores
-                                "/recipes/saved"               // tus guardadas
+                                "/recipes/saved",
+                                "/recipes/{id:\\\\d+}/draft/full"// tus guardadas
                         ).authenticated()
 
                         .requestMatchers(HttpMethod.GET, "/recipes/created").authenticated()

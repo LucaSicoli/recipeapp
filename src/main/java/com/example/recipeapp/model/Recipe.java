@@ -60,11 +60,25 @@ public class Recipe {
     @Enumerated(EnumType.STRING)
     private TipoPlato tipoPlato;
 
-    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    /**
+     * Aquí cascada total + orphanRemoval:
+     * cuando quites un hijo de la lista, JPA lo borrará de la BD.
+     */
+    @OneToMany(
+            mappedBy = "recipe",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER
+    )
     @JsonIgnoreProperties("recipe")
     private List<RecipeIngredient> ingredients = new ArrayList<>();
 
-    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(
+            mappedBy = "recipe",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER
+    )
     @JsonIgnoreProperties("recipe")
     private List<RecipeStep> steps = new ArrayList<>();
 
@@ -75,4 +89,5 @@ public class Recipe {
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<UserSavedRecipe> savedRecipes = new ArrayList<>();
+
 }

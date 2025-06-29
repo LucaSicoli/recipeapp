@@ -1,6 +1,8 @@
 package com.example.recipeapp.service;
 
 import com.example.recipeapp.factory.RecipeFactory;
+import com.example.recipeapp.factory.RecipeIngredientFactory;
+import com.example.recipeapp.factory.RecipeStepFactory;
 import com.example.recipeapp.model.*;
 import com.example.recipeapp.payload.*;
 import com.example.recipeapp.repository.RatingRepository;
@@ -9,6 +11,7 @@ import com.example.recipeapp.repository.UserRepository;
 import com.example.recipeapp.repository.UserSavedRecipeRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -37,23 +40,29 @@ public class RecipeService {
     private RecipeIngredientService recipeIngredientService;
 
     @Autowired
-    private RecipeFactory recipeFactory;  // Inyectamos el RecipeFactory
+    private RecipeStepService recipeStepService;            // <-- corregido
+
+    @Autowired
+    private RecipeFactory recipeFactory;
+
+    @Autowired
+    private RecipeStepFactory recipeStepFactory;
+
+    @Autowired
+    private RecipeIngredientFactory recipeIngredientFactory;
 
     @Autowired
     private UserSavedRecipeRepository userSavedRecipeRepository;
 
     // ------------------------------------------------------------
-    // Método existente: crear una receta a partir de RecipeRequest
+    // Crear receta
     // ------------------------------------------------------------
     public Recipe createRecipe(RecipeRequest request) {
         Recipe r = recipeFactory.createRecipeFromRequest(request);
         r.setFechaCreacion(LocalDateTime.now());
-        // estado de aprobación siempre PENDIENTE (correcto)
         r.setEstado(EstadoAprobacion.PENDIENTE);
-        // PUBLICAMOS directamente:
         r.setEstadoPublicacion(EstadoPublicacion.PUBLICADO);
 
-        // asignamos creador…
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User u = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -63,25 +72,18 @@ public class RecipeService {
     }
 
     // ------------------------------------------------------------
-    // Ahora, agregamos este nuevo método para devolver el listado
-    // de recetas con alias del creador y promedio de rating
+    // Listado con alias y promedio de rating
     // ------------------------------------------------------------
     public List<RecipeSummaryResponse> getAllRecipesWithAverage() {
-        List<Recipe> recipes = recipeRepository.findAll();
-        return recipes.stream()
+        return recipeRepository.findAll().stream()
                 .map(recipe -> {
                     String alias = recipe.getUsuarioCreador().getAlias();
                     Double avg = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
-                    // En el summary quizá quieras sólo la primera URL como “thumb”
-                    String thumb = recipe.getMediaUrls().isEmpty()
-                            ? null
-                            : recipe.getMediaUrls().get(0);
-
                     return new RecipeSummaryResponse(
                             recipe.getId(),
                             recipe.getNombre(),
                             recipe.getDescripcion(),
-                            recipe.getMediaUrls(),                 // en lugar de fotoPrincipal
+                            recipe.getMediaUrls(),
                             recipe.getTiempo(),
                             recipe.getPorciones(),
                             recipe.getTipoPlato().name(),
@@ -93,9 +95,8 @@ public class RecipeService {
                 .collect(Collectors.toList());
     }
 
-
     // -----------------------------------------------
-    // Métodos existentes para búsquedas y actualizaciones
+    // Búsquedas y operaciones básicas
     // -----------------------------------------------
     public List<Recipe> getRecipesByIngredient(String ingredientName) {
         return recipeRepository.findRecipesByIngredient(ingredientName);
@@ -131,19 +132,11 @@ public class RecipeService {
     }
 
     public Optional<RecipeDetailResponse> getRecipeDetailWithAverage(Long id) {
-        // 1) Buscar la receta con join al usuario creador, ingredientes y pasos
         Optional<Recipe> recipeOpt = recipeRepository.findByIdWithUsuarioCreador(id);
-        if (recipeOpt.isEmpty()) {
-            return Optional.empty();
-        }
+        if (recipeOpt.isEmpty()) return Optional.empty();
         Recipe receta = recipeOpt.get();
-
-        // 2) Calcular promedio de rating (puede devolver null si no hay ratings)
         Double avg = ratingRepository.findAverageRatingByRecipeId(id);
-        Double promedio = (avg != null) ? avg : 0.0;
-
-        // 3) Mapeamos a DTO
-        RecipeDetailResponse dto = RecipeDetailResponse.fromEntity(receta, promedio);
+        RecipeDetailResponse dto = RecipeDetailResponse.fromEntity(receta, (avg != null) ? avg : 0.0);
         return Optional.of(dto);
     }
 
@@ -152,12 +145,13 @@ public class RecipeService {
         return recipeRepository.findByEstado(estadoEnum);
     }
 
+    // ------------------------------------------------------------
+    // Borradores
+    // ------------------------------------------------------------
     public Recipe saveDraftFromRequest(String email, RecipeRequest request) {
         Recipe draft = recipeFactory.createRecipeFromRequest(request);
         draft.setFechaCreacion(LocalDateTime.now());
-        // marcamos este draft como borrador
         draft.setEstadoPublicacion(EstadoPublicacion.BORRADOR);
-        // ¡muy importante! dejamos el estado de aprobación también en PENDIENTE
         draft.setEstado(EstadoAprobacion.PENDIENTE);
 
         User u = userRepository.findByEmail(email)
@@ -167,7 +161,6 @@ public class RecipeService {
         return recipeRepository.save(draft);
     }
 
-    // 2. Listar borradores de un usuario por email
     public List<Recipe> getDraftsByUserEmail(String email) {
         User u = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -175,7 +168,6 @@ public class RecipeService {
                 u.getId(), EstadoPublicacion.BORRADOR);
     }
 
-    // 3. Publicar un borrador existente
     public Recipe publish(Long recipeId) {
         Recipe r = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new RuntimeException("Receta no encontrada"));
@@ -183,9 +175,33 @@ public class RecipeService {
         return recipeRepository.save(r);
     }
 
+    public boolean isOwner(Long recipeId, String email) {
+        return recipeRepository.findById(recipeId)
+                .map(r -> r.getUsuarioCreador().getEmail().equalsIgnoreCase(email))
+                .orElse(false);
+    }
+
+    @Transactional
+    public Recipe updateDraftFromRequest(Long id, String email, RecipeRequest request) {
+        Recipe existing = recipeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Receta no encontrada"));
+        if (!isOwner(id, email)) {
+            throw new AccessDeniedException("No tienes permiso para editar este borrador");
+        }
+        existing.setNombre(request.getNombre());
+        existing.setDescripcion(request.getDescripcion());
+        existing.setTiempo(request.getTiempo());
+        existing.setPorciones(request.getPorciones());
+        existing.setTipoPlato(TipoPlato.valueOf(request.getTipoPlato().toUpperCase()));
+        existing.setCategoria(Categoria.valueOf(request.getCategoria().toUpperCase()));
+        existing.setMediaUrls(request.getMediaUrls());
+        existing.setEstadoPublicacion(EstadoPublicacion.BORRADOR);
+        existing.setEstado(EstadoAprobacion.PENDIENTE);
+        return recipeRepository.save(existing);
+    }
+
     public List<RecipeSummaryResponse> getMyDraftsSummary(String email) {
-        List<Recipe> drafts = getDraftsByUserEmail(email);
-        return drafts.stream()
+        return getDraftsByUserEmail(email).stream()
                 .map(r -> new RecipeSummaryResponse(
                         r.getId(),
                         r.getNombre(),
@@ -201,29 +217,79 @@ public class RecipeService {
                 .collect(Collectors.toList());
     }
 
+    // ------------------------------------------------------------
+    // Nuevo método: sincronizar ingredientes y pasos de un borrador
+    // ------------------------------------------------------------
+    @Transactional
+    public Recipe syncDraftIngredientsAndSteps(Long id, String email, RecipeRequest request) {
+        Recipe existing = recipeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Receta no encontrada"));
+        if (!isOwner(id, email)) {
+            throw new AccessDeniedException("No tienes permiso para editar este borrador");
+        }
+
+        // 1) Actualizo los campos simples de la receta
+        existing.setNombre(request.getNombre());
+        existing.setDescripcion(request.getDescripcion());
+        existing.setTiempo(request.getTiempo());
+        existing.setPorciones(request.getPorciones());
+        existing.setCategoria(Categoria.valueOf(request.getCategoria().toUpperCase()));
+        existing.setTipoPlato(TipoPlato.valueOf(request.getTipoPlato().toUpperCase()));
+        existing.setMediaUrls(request.getMediaUrls());  // portada o vídeo
+
+        // 2) Limpio ingredientes y pasos para que orphanRemoval los borre
+        existing.getIngredients().clear();
+        existing.getSteps().clear();
+
+        // 3) Recréo ingredientes
+        if (request.getIngredients() != null) {
+            for (RecipeIngredientRequest ir : request.getIngredients()) {
+                RecipeIngredient ri = recipeIngredientFactory.createRecipeIngredient(ir, existing);
+                existing.getIngredients().add(ri);
+            }
+        }
+
+        // 4) Recréo pasos
+        if (request.getSteps() != null) {
+            int numero = 1;
+            for (RecipeStepRequest sr : request.getSteps()) {
+                sr.setNumeroPaso(numero++);
+                RecipeStep rs = recipeStepFactory.createRecipeStep(sr, existing);
+                existing.getSteps().add(rs);
+            }
+        }
+
+        // 5) Guardo todo de una vez
+        return recipeRepository.save(existing);
+    }
+
+    // ------------------------------------------------------------
+    // Otros listados
+    // ------------------------------------------------------------
     public List<RecipeSummaryResponse> getLatestApprovedPublishedSummaries() {
-        var recipes = recipeRepository.findTop3ByEstadoAndEstadoPublicacionOrderByFechaCreacionDesc(
-                EstadoAprobacion.APROBADO,
-                EstadoPublicacion.PUBLICADO
-        );
-        return recipes.stream().map(r -> new RecipeSummaryResponse(
-                r.getId(), r.getNombre(), r.getDescripcion(), r.getMediaUrls(),
-                r.getTiempo(), r.getPorciones(), r.getTipoPlato().name(),
-                r.getCategoria().name(), r.getUsuarioCreador().getAlias(),
-                ratingRepository.findAverageRatingByRecipeId(r.getId())
-        )).toList();
+        return recipeRepository
+                .findTop3ByEstadoAndEstadoPublicacionOrderByFechaCreacionDesc(
+                        EstadoAprobacion.APROBADO,
+                        EstadoPublicacion.PUBLICADO)
+                .stream()
+                .map(r -> new RecipeSummaryResponse(
+                        r.getId(), r.getNombre(), r.getDescripcion(), r.getMediaUrls(),
+                        r.getTiempo(), r.getPorciones(), r.getTipoPlato().name(),
+                        r.getCategoria().name(), r.getUsuarioCreador().getAlias(),
+                        ratingRepository.findAverageRatingByRecipeId(r.getId())
+                ))
+                .collect(Collectors.toList());
     }
 
     public List<UserSavedRecipeDTO> getMySavedRecipesSummary(String email) {
         User u = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        List<UserSavedRecipe> list = userSavedRecipeRepository.findByUserId(u.getId());
-        return list.stream()
+        return userSavedRecipeRepository.findByUserId(u.getId()).stream()
                 .map(sr -> new UserSavedRecipeDTO(
-                        sr.getId(),                                // <-- este es el id del registro “guardado”
-                        sr.getRecipe().getId(),                    // recipeId
-                        sr.getRecipe().getNombre(),                // recipeNombre
-                        sr.getFechaAgregado().toString()           // fechaAgregado como String
+                        sr.getId(),
+                        sr.getRecipe().getId(),
+                        sr.getRecipe().getNombre(),
+                        sr.getFechaAgregado().toString()
                 ))
                 .collect(Collectors.toList());
     }
@@ -231,9 +297,9 @@ public class RecipeService {
     public List<RecipeSummaryResponse> getMyPublishedSummaries(String email) {
         User u = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        List<Recipe> recipes = recipeRepository
-                .findByUsuarioCreadorIdAndEstadoPublicacion(u.getId(), EstadoPublicacion.PUBLICADO);
-        return recipes.stream()
+        return recipeRepository
+                .findByUsuarioCreadorIdAndEstadoPublicacion(u.getId(), EstadoPublicacion.PUBLICADO)
+                .stream()
                 .map(r -> new RecipeSummaryResponse(
                         r.getId(),
                         r.getNombre(),
@@ -248,5 +314,4 @@ public class RecipeService {
                 ))
                 .collect(Collectors.toList());
     }
-
 }
