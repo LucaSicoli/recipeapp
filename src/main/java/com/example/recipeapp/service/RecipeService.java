@@ -259,6 +259,7 @@ public class RecipeService {
             }
         }
 
+        existing.setEstadoPublicacion(EstadoPublicacion.BORRADOR);
         // 5) Guardo todo de una vez
         return recipeRepository.save(existing);
     }
