@@ -9,4 +9,5 @@ public interface UserSavedRecipeRepository extends JpaRepository<UserSavedRecipe
     // Obtener las recetas guardadas por un usuario
     List<UserSavedRecipe> findByUserId(Long userId);
     Optional<UserSavedRecipe> findByUserIdAndRecipeId(Long userId, Long recipeId);
+    void deleteByUserIdAndRecipeId(Long userId, Long recipeId);
 }

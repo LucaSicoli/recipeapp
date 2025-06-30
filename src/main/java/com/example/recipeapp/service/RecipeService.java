@@ -315,4 +315,18 @@ public class RecipeService {
                 ))
                 .collect(Collectors.toList());
     }
+
+    @Transactional
+    public void saveRecipeForUser(Long recipeId, String email) {
+        User u = userRepository.findByEmail(email).orElseThrow();
+        Recipe r = recipeRepository.findById(recipeId).orElseThrow();
+        UserSavedRecipe sr = new UserSavedRecipe(u, r, LocalDateTime.now());
+        userSavedRecipeRepository.save(sr);
+    }
+
+    @Transactional
+    public void unsaveRecipeForUser(Long recipeId, String email) {
+        User u = userRepository.findByEmail(email).orElseThrow();
+        userSavedRecipeRepository.deleteByUserIdAndRecipeId(u.getId(), recipeId);
+    }
 }

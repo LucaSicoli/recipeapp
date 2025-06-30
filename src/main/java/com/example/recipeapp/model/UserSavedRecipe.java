@@ -26,4 +26,10 @@ public class UserSavedRecipe {
     private Recipe recipe;
 
     private LocalDateTime fechaAgregado;
+
+    public UserSavedRecipe(User user, Recipe recipe, LocalDateTime fechaAgregado) {
+        this.user = user;
+        this.recipe = recipe;
+        this.fechaAgregado = fechaAgregado;
+    }
 }

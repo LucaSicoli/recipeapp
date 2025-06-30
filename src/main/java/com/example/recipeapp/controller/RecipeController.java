@@ -149,6 +149,23 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.getMySavedRecipesSummary(email));
     }
 
+    @PutMapping("/{id}/save")
+    public ResponseEntity<Void> saveRecipe(@PathVariable Long id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        recipeService.saveRecipeForUser(id, email);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Quita la receta de los guardados del usuario
+     */
+    @DeleteMapping("/{id}/save")
+    public ResponseEntity<Void> unsaveRecipe(@PathVariable Long id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        recipeService.unsaveRecipeForUser(id, email);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/created")
     public ResponseEntity<List<RecipeSummaryResponse>> listMyPublished() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
