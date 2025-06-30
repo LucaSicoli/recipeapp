@@ -290,7 +290,8 @@ public class RecipeService {
                         sr.getId(),
                         sr.getRecipe().getId(),
                         sr.getRecipe().getNombre(),
-                        sr.getFechaAgregado().toString()
+                        sr.getFechaAgregado().toString(),
+                        sr.getRecipe().getMediaUrls()               // ← aquí
                 ))
                 .collect(Collectors.toList());
     }
