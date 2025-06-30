@@ -28,6 +28,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(length = 250)          // tamaño máximo a tu gusto
+    private String descripcion;
+
     private String nombre; // Nombre completo (opcional)
 
     private String rol; // Puedes definir un Enum para roles si lo prefieres

@@ -1,9 +1,9 @@
 package com.example.recipeapp.controller;
 
 import com.example.recipeapp.model.User;
+import com.example.recipeapp.payload.UserMeResponse;
 import com.example.recipeapp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -21,37 +21,45 @@ public class UserController {
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
         User created = userService.createUser(user);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+        return ResponseEntity.status(201).body(created);
     }
 
     // Obtener un usuario por ID
     @GetMapping("/{id}")
     public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Optional<User> user = userService.getUserById(id);
-        return user.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        return userService.getUserById(id)
+                .map(u -> ResponseEntity.ok(u))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // Actualizar un usuario
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
-        // Opcional: validar que el ID coincida con el del objeto user
+        user.setId(id);
         User updated = userService.updateUser(user);
-        return new ResponseEntity<>(updated, HttpStatus.OK);
+        return ResponseEntity.ok(updated);
     }
 
     // Eliminar un usuario
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ResponseEntity.noContent().build();
     }
 
+    // Obtener datos del usuario autenticado
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser() {
+    public ResponseEntity<UserMeResponse> me() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User u = userService.getUserByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        return ResponseEntity.ok(u);
+        UserMeResponse dto = new UserMeResponse(
+                u.getId(),
+                u.getAlias(),
+                u.getEmail(),
+                u.getUrlFotoPerfil(),
+                u.getDescripcion()
+        );
+        return ResponseEntity.ok(dto);
     }
 }
