@@ -77,8 +77,10 @@ public class RecipeService {
     public List<RecipeSummaryResponse> getAllRecipesWithAverage() {
         return recipeRepository.findAll().stream()
                 .map(recipe -> {
-                    String alias = recipe.getUsuarioCreador().getAlias();
-                    Double avg = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
+                    User creator = recipe.getUsuarioCreador();
+                    String alias = creator.getAlias();
+                    String foto  = creator.getUrlFotoPerfil();            // ← URL de la foto
+                    Double avg   = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
                     return new RecipeSummaryResponse(
                             recipe.getId(),
                             recipe.getNombre(),
@@ -89,11 +91,13 @@ public class RecipeService {
                             recipe.getTipoPlato().name(),
                             recipe.getCategoria().name(),
                             alias,
+                            foto,                                            // ← lo pasamos al DTO
                             (avg != null) ? avg : 0.0
                     );
                 })
                 .collect(Collectors.toList());
     }
+
 
     // -----------------------------------------------
     // Búsquedas y operaciones básicas
@@ -202,18 +206,27 @@ public class RecipeService {
 
     public List<RecipeSummaryResponse> getMyDraftsSummary(String email) {
         return getDraftsByUserEmail(email).stream()
-                .map(r -> new RecipeSummaryResponse(
-                        r.getId(),
-                        r.getNombre(),
-                        r.getDescripcion(),
-                        Collections.singletonList(r.getMediaUrls().isEmpty() ? null : r.getMediaUrls().get(0)),
-                        r.getTiempo(),
-                        r.getPorciones(),
-                        r.getTipoPlato().name(),
-                        r.getCategoria().name(),
-                        r.getUsuarioCreador().getAlias(),
-                        ratingRepository.findAverageRatingByRecipeId(r.getId())
-                ))
+                .map(r -> {
+                    String firstMedia = r.getMediaUrls().isEmpty()
+                            ? null
+                            : r.getMediaUrls().get(0);
+                    return new RecipeSummaryResponse(
+                            r.getId(),
+                            r.getNombre(),
+                            r.getDescripcion(),
+                            Collections.singletonList(firstMedia),
+                            r.getTiempo(),
+                            r.getPorciones(),
+                            r.getTipoPlato().name(),
+                            r.getCategoria().name(),
+                            // alias del creador
+                            r.getUsuarioCreador().getAlias(),
+                            // ← nueva URL de la foto de perfil
+                            r.getUsuarioCreador().getUrlFotoPerfil(),
+                            // promedio de rating
+                            ratingRepository.findAverageRatingByRecipeId(r.getId())
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -271,12 +284,23 @@ public class RecipeService {
         return recipeRepository
                 .findTop3ByEstadoAndEstadoPublicacionOrderByFechaCreacionDesc(
                         EstadoAprobacion.APROBADO,
-                        EstadoPublicacion.PUBLICADO)
+                        EstadoPublicacion.PUBLICADO
+                )
                 .stream()
                 .map(r -> new RecipeSummaryResponse(
-                        r.getId(), r.getNombre(), r.getDescripcion(), r.getMediaUrls(),
-                        r.getTiempo(), r.getPorciones(), r.getTipoPlato().name(),
-                        r.getCategoria().name(), r.getUsuarioCreador().getAlias(),
+                        r.getId(),
+                        r.getNombre(),
+                        r.getDescripcion(),
+                        r.getMediaUrls(),
+                        r.getTiempo(),
+                        r.getPorciones(),
+                        r.getTipoPlato().name(),
+                        r.getCategoria().name(),
+                        // alias del creador
+                        r.getUsuarioCreador().getAlias(),
+                        // ← nueva URL de la foto de perfil
+                        r.getUsuarioCreador().getUrlFotoPerfil(),
+                        // promedio de rating
                         ratingRepository.findAverageRatingByRecipeId(r.getId())
                 ))
                 .collect(Collectors.toList());
@@ -297,23 +321,28 @@ public class RecipeService {
     }
 
     public List<RecipeSummaryResponse> getMyPublishedSummaries(String email) {
-        User u = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Long userId = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
+                .getId();
         return recipeRepository
-                .findByUsuarioCreadorIdAndEstadoPublicacion(u.getId(), EstadoPublicacion.PUBLICADO)
+                .findByUsuarioCreadorIdAndEstadoPublicacion(userId, EstadoPublicacion.PUBLICADO)
                 .stream()
-                .map(r -> new RecipeSummaryResponse(
-                        r.getId(),
-                        r.getNombre(),
-                        r.getDescripcion(),
-                        r.getMediaUrls(),
-                        r.getTiempo(),
-                        r.getPorciones(),
-                        r.getTipoPlato().name(),
-                        r.getCategoria().name(),
-                        r.getUsuarioCreador().getAlias(),
-                        ratingRepository.findAverageRatingByRecipeId(r.getId())
-                ))
+                .map(r -> {
+                    User creator = r.getUsuarioCreador();
+                    return new RecipeSummaryResponse(
+                            r.getId(),
+                            r.getNombre(),
+                            r.getDescripcion(),
+                            r.getMediaUrls(),
+                            r.getTiempo(),
+                            r.getPorciones(),
+                            r.getTipoPlato().name(),
+                            r.getCategoria().name(),
+                            creator.getAlias(),
+                            creator.getUrlFotoPerfil(),                     // ← foto aquí también
+                            ratingRepository.findAverageRatingByRecipeId(r.getId())
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
