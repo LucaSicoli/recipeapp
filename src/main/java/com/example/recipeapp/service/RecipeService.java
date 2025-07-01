@@ -374,57 +374,87 @@ public class RecipeService {
     ) {
         Specification<Recipe> spec = Specification.where(null);
 
+        // ────────────────────────────────
+        // Sólo recetas aprobadas y publicadas
+        // ────────────────────────────────
+        spec = spec
+                .and((root, cq, cb) ->
+                        cb.equal(
+                                root.get("estado"),
+                                EstadoAprobacion.APROBADO
+                        )
+                )
+                .and((root, cq, cb) ->
+                        cb.equal(
+                                root.get("estadoPublicacion"),
+                                EstadoPublicacion.PUBLICADO
+                        )
+                );
+
         if (name != null && !name.isBlank()) {
             spec = spec.and((root, cq, cb) ->
-                    cb.like(cb.lower(root.get("nombre")), "%" + name.toLowerCase() + "%")
+                    cb.like(
+                            cb.lower(root.get("nombre")),
+                            "%" + name.toLowerCase() + "%"
+                    )
             );
         }
 
         if (type != null && !type.isBlank()) {
             spec = spec.and((root, cq, cb) ->
-                    cb.equal(root.get("tipoPlato"), TipoPlato.valueOf(type.toUpperCase()))
+                    cb.equal(
+                            root.get("tipoPlato"),
+                            TipoPlato.valueOf(type.toUpperCase())
+                    )
             );
         }
 
         if (ingredient != null && !ingredient.isBlank()) {
             spec = spec.and((root, cq, cb) -> {
                 Join<?,?> joinIng = root.join("ingredients", JoinType.INNER);
-                return cb.equal(cb.lower(joinIng.get("ingredient").get("nombre")),
-                        ingredient.toLowerCase());
+                return cb.equal(
+                        cb.lower(joinIng.get("ingredient").get("nombre")),
+                        ingredient.toLowerCase()
+                );
             });
         }
 
         if (excludeIngredient != null && !excludeIngredient.isBlank()) {
             spec = spec.and((root, cq, cb) -> {
                 Join<?,?> joinIng = root.join("ingredients", JoinType.LEFT);
-                return cb.notEqual(cb.lower(joinIng.get("ingredient").get("nombre")),
-                        excludeIngredient.toLowerCase());
+                return cb.notEqual(
+                        cb.lower(joinIng.get("ingredient").get("nombre")),
+                        excludeIngredient.toLowerCase()
+                );
             });
         }
 
         if (userAlias != null && !userAlias.isBlank()) {
             spec = spec.and((root, cq, cb) ->
-                    cb.equal(cb.lower(root.get("usuarioCreador").get("alias")),
-                            userAlias.toLowerCase())
+                    cb.equal(
+                            cb.lower(root.get("usuarioCreador").get("alias")),
+                            userAlias.toLowerCase()
+                    )
             );
         }
 
+        // ────────────────────────────────
         // Ordenamiento
-        Sort sortOrder = Sort.by("nombre"); // por defecto alfabético por nombre
+        // ────────────────────────────────
+        Sort sortOrder = Sort.by("nombre"); // alfabético por defecto
         if ("newest".equalsIgnoreCase(sort)) {
             sortOrder = Sort.by(Sort.Direction.DESC, "fechaCreacion");
         } else if ("user".equalsIgnoreCase(sort)) {
             sortOrder = Sort.by(Sort.Direction.ASC, "usuarioCreador.alias");
         }
 
-        // Ejecuta consulta
+        // ────────────────────────────────
+        // Ejecuta la consulta y mapea
+        // ────────────────────────────────
         List<Recipe> recipes = recipeRepository.findAll(spec, sortOrder);
-
-        // Mapea a DTO
         return recipes.stream()
                 .map(r -> {
-                    Double avg = ratingRepository
-                            .findAverageRatingByRecipeId(r.getId());
+                    Double avg = ratingRepository.findAverageRatingByRecipeId(r.getId());
                     return new RecipeSummaryResponse(
                             r.getId(),
                             r.getNombre(),
