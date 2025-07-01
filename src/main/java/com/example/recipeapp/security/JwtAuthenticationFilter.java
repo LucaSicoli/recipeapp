@@ -45,6 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (path.equals("/recipes")
                     || path.equals("/recipes/summary")
                     || path.matches("/recipes/\\d+$")
+                    || path.equals("/recipes/search")
                     || path.matches("/recipes/\\d+/full$")
                     || path.startsWith("/recipes/estado/")) {
                 return true;

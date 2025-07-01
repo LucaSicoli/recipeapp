@@ -9,8 +9,12 @@ import com.example.recipeapp.repository.RatingRepository;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
 import com.example.recipeapp.repository.UserSavedRecipeRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -358,5 +362,83 @@ public class RecipeService {
     public void unsaveRecipeForUser(Long recipeId, String email) {
         User u = userRepository.findByEmail(email).orElseThrow();
         userSavedRecipeRepository.deleteByUserIdAndRecipeId(u.getId(), recipeId);
+    }
+
+    public List<RecipeSummaryResponse> searchRecipes(
+            String name,
+            String type,
+            String ingredient,
+            String excludeIngredient,
+            String userAlias,
+            String sort
+    ) {
+        Specification<Recipe> spec = Specification.where(null);
+
+        if (name != null && !name.isBlank()) {
+            spec = spec.and((root, cq, cb) ->
+                    cb.like(cb.lower(root.get("nombre")), "%" + name.toLowerCase() + "%")
+            );
+        }
+
+        if (type != null && !type.isBlank()) {
+            spec = spec.and((root, cq, cb) ->
+                    cb.equal(root.get("tipoPlato"), TipoPlato.valueOf(type.toUpperCase()))
+            );
+        }
+
+        if (ingredient != null && !ingredient.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                Join<?,?> joinIng = root.join("ingredients", JoinType.INNER);
+                return cb.equal(cb.lower(joinIng.get("ingredient").get("nombre")),
+                        ingredient.toLowerCase());
+            });
+        }
+
+        if (excludeIngredient != null && !excludeIngredient.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                Join<?,?> joinIng = root.join("ingredients", JoinType.LEFT);
+                return cb.notEqual(cb.lower(joinIng.get("ingredient").get("nombre")),
+                        excludeIngredient.toLowerCase());
+            });
+        }
+
+        if (userAlias != null && !userAlias.isBlank()) {
+            spec = spec.and((root, cq, cb) ->
+                    cb.equal(cb.lower(root.get("usuarioCreador").get("alias")),
+                            userAlias.toLowerCase())
+            );
+        }
+
+        // Ordenamiento
+        Sort sortOrder = Sort.by("nombre"); // por defecto alfabético por nombre
+        if ("newest".equalsIgnoreCase(sort)) {
+            sortOrder = Sort.by(Sort.Direction.DESC, "fechaCreacion");
+        } else if ("user".equalsIgnoreCase(sort)) {
+            sortOrder = Sort.by(Sort.Direction.ASC, "usuarioCreador.alias");
+        }
+
+        // Ejecuta consulta
+        List<Recipe> recipes = recipeRepository.findAll(spec, sortOrder);
+
+        // Mapea a DTO
+        return recipes.stream()
+                .map(r -> {
+                    Double avg = ratingRepository
+                            .findAverageRatingByRecipeId(r.getId());
+                    return new RecipeSummaryResponse(
+                            r.getId(),
+                            r.getNombre(),
+                            r.getDescripcion(),
+                            r.getMediaUrls(),
+                            r.getTiempo(),
+                            r.getPorciones(),
+                            r.getTipoPlato().name(),
+                            r.getCategoria().name(),
+                            r.getUsuarioCreador().getAlias(),
+                            r.getUsuarioCreador().getUrlFotoPerfil(),
+                            avg != null ? avg : 0.0
+                    );
+                })
+                .collect(Collectors.toList());
     }
 }

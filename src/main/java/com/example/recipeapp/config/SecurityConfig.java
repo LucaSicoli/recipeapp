@@ -81,6 +81,8 @@ public class SecurityConfig {
                                 "/recipes/{id:\\\\d+}/draft/full"// tus guardadas
                         ).authenticated()
 
+                        .requestMatchers(HttpMethod.GET, "/recipes/search").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/recipes/created").authenticated()
 
                         // ratings públicos
