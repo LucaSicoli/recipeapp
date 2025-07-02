@@ -1,30 +1,33 @@
 package com.example.recipeapp.payload;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.List;
+
+@Setter
+@Getter
 public class UserSavedRecipeDTO {
     private Long id;
     private Long recipeId;
     private String recipeNombre;
     private String fechaAgregado;
+    private List<String> mediaUrls;
 
     public UserSavedRecipeDTO() {}
 
-    public UserSavedRecipeDTO(Long id, Long recipeId, String recipeNombre, String fechaAgregado) {
+    public UserSavedRecipeDTO(
+            Long id,
+            Long recipeId,
+            String recipeNombre,
+            String fechaAgregado,
+            List<String> mediaUrls
+    ) {
         this.id             = id;
         this.recipeId       = recipeId;
         this.recipeNombre   = recipeNombre;
         this.fechaAgregado  = fechaAgregado;
+        this.mediaUrls      = mediaUrls;
     }
 
-    // getters / setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public Long getRecipeId() { return recipeId; }
-    public void setRecipeId(Long recipeId) { this.recipeId = recipeId; }
-
-    public String getRecipeNombre() { return recipeNombre; }
-    public void setRecipeNombre(String recipeNombre) { this.recipeNombre = recipeNombre; }
-
-    public String getFechaAgregado() { return fechaAgregado; }
-    public void setFechaAgregado(String fechaAgregado) { this.fechaAgregado = fechaAgregado; }
 }

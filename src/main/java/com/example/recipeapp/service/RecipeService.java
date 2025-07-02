@@ -9,8 +9,12 @@ import com.example.recipeapp.repository.RatingRepository;
 import com.example.recipeapp.repository.RecipeRepository;
 import com.example.recipeapp.repository.UserRepository;
 import com.example.recipeapp.repository.UserSavedRecipeRepository;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -77,8 +81,10 @@ public class RecipeService {
     public List<RecipeSummaryResponse> getAllRecipesWithAverage() {
         return recipeRepository.findAll().stream()
                 .map(recipe -> {
-                    String alias = recipe.getUsuarioCreador().getAlias();
-                    Double avg = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
+                    User creator = recipe.getUsuarioCreador();
+                    String alias = creator.getAlias();
+                    String foto  = creator.getUrlFotoPerfil();            // ← URL de la foto
+                    Double avg   = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
                     return new RecipeSummaryResponse(
                             recipe.getId(),
                             recipe.getNombre(),
@@ -89,11 +95,13 @@ public class RecipeService {
                             recipe.getTipoPlato().name(),
                             recipe.getCategoria().name(),
                             alias,
+                            foto,                                            // ← lo pasamos al DTO
                             (avg != null) ? avg : 0.0
                     );
                 })
                 .collect(Collectors.toList());
     }
+
 
     // -----------------------------------------------
     // Búsquedas y operaciones básicas
@@ -202,18 +210,27 @@ public class RecipeService {
 
     public List<RecipeSummaryResponse> getMyDraftsSummary(String email) {
         return getDraftsByUserEmail(email).stream()
-                .map(r -> new RecipeSummaryResponse(
-                        r.getId(),
-                        r.getNombre(),
-                        r.getDescripcion(),
-                        Collections.singletonList(r.getMediaUrls().isEmpty() ? null : r.getMediaUrls().get(0)),
-                        r.getTiempo(),
-                        r.getPorciones(),
-                        r.getTipoPlato().name(),
-                        r.getCategoria().name(),
-                        r.getUsuarioCreador().getAlias(),
-                        ratingRepository.findAverageRatingByRecipeId(r.getId())
-                ))
+                .map(r -> {
+                    String firstMedia = r.getMediaUrls().isEmpty()
+                            ? null
+                            : r.getMediaUrls().get(0);
+                    return new RecipeSummaryResponse(
+                            r.getId(),
+                            r.getNombre(),
+                            r.getDescripcion(),
+                            Collections.singletonList(firstMedia),
+                            r.getTiempo(),
+                            r.getPorciones(),
+                            r.getTipoPlato().name(),
+                            r.getCategoria().name(),
+                            // alias del creador
+                            r.getUsuarioCreador().getAlias(),
+                            // ← nueva URL de la foto de perfil
+                            r.getUsuarioCreador().getUrlFotoPerfil(),
+                            // promedio de rating
+                            ratingRepository.findAverageRatingByRecipeId(r.getId())
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -271,12 +288,23 @@ public class RecipeService {
         return recipeRepository
                 .findTop3ByEstadoAndEstadoPublicacionOrderByFechaCreacionDesc(
                         EstadoAprobacion.APROBADO,
-                        EstadoPublicacion.PUBLICADO)
+                        EstadoPublicacion.PUBLICADO
+                )
                 .stream()
                 .map(r -> new RecipeSummaryResponse(
-                        r.getId(), r.getNombre(), r.getDescripcion(), r.getMediaUrls(),
-                        r.getTiempo(), r.getPorciones(), r.getTipoPlato().name(),
-                        r.getCategoria().name(), r.getUsuarioCreador().getAlias(),
+                        r.getId(),
+                        r.getNombre(),
+                        r.getDescripcion(),
+                        r.getMediaUrls(),
+                        r.getTiempo(),
+                        r.getPorciones(),
+                        r.getTipoPlato().name(),
+                        r.getCategoria().name(),
+                        // alias del creador
+                        r.getUsuarioCreador().getAlias(),
+                        // ← nueva URL de la foto de perfil
+                        r.getUsuarioCreador().getUrlFotoPerfil(),
+                        // promedio de rating
                         ratingRepository.findAverageRatingByRecipeId(r.getId())
                 ))
                 .collect(Collectors.toList());
@@ -290,29 +318,157 @@ public class RecipeService {
                         sr.getId(),
                         sr.getRecipe().getId(),
                         sr.getRecipe().getNombre(),
-                        sr.getFechaAgregado().toString()
+                        sr.getFechaAgregado().toString(),
+                        sr.getRecipe().getMediaUrls()               // ← aquí
                 ))
                 .collect(Collectors.toList());
     }
 
     public List<RecipeSummaryResponse> getMyPublishedSummaries(String email) {
-        User u = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Long userId = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
+                .getId();
         return recipeRepository
-                .findByUsuarioCreadorIdAndEstadoPublicacion(u.getId(), EstadoPublicacion.PUBLICADO)
+                .findByUsuarioCreadorIdAndEstadoPublicacion(userId, EstadoPublicacion.PUBLICADO)
                 .stream()
-                .map(r -> new RecipeSummaryResponse(
-                        r.getId(),
-                        r.getNombre(),
-                        r.getDescripcion(),
-                        r.getMediaUrls(),
-                        r.getTiempo(),
-                        r.getPorciones(),
-                        r.getTipoPlato().name(),
-                        r.getCategoria().name(),
-                        r.getUsuarioCreador().getAlias(),
-                        ratingRepository.findAverageRatingByRecipeId(r.getId())
-                ))
+                .map(r -> {
+                    User creator = r.getUsuarioCreador();
+                    return new RecipeSummaryResponse(
+                            r.getId(),
+                            r.getNombre(),
+                            r.getDescripcion(),
+                            r.getMediaUrls(),
+                            r.getTiempo(),
+                            r.getPorciones(),
+                            r.getTipoPlato().name(),
+                            r.getCategoria().name(),
+                            creator.getAlias(),
+                            creator.getUrlFotoPerfil(),                     // ← foto aquí también
+                            ratingRepository.findAverageRatingByRecipeId(r.getId())
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void saveRecipeForUser(Long recipeId, String email) {
+        User u = userRepository.findByEmail(email).orElseThrow();
+        Recipe r = recipeRepository.findById(recipeId).orElseThrow();
+        UserSavedRecipe sr = new UserSavedRecipe(u, r, LocalDateTime.now());
+        userSavedRecipeRepository.save(sr);
+    }
+
+    @Transactional
+    public void unsaveRecipeForUser(Long recipeId, String email) {
+        User u = userRepository.findByEmail(email).orElseThrow();
+        userSavedRecipeRepository.deleteByUserIdAndRecipeId(u.getId(), recipeId);
+    }
+
+    public List<RecipeSummaryResponse> searchRecipes(
+            String name,
+            String type,
+            String ingredient,
+            String excludeIngredient,
+            String userAlias,
+            String sort
+    ) {
+        Specification<Recipe> spec = Specification.where(null);
+
+        // ────────────────────────────────
+        // Sólo recetas aprobadas y publicadas
+        // ────────────────────────────────
+        spec = spec
+                .and((root, cq, cb) ->
+                        cb.equal(
+                                root.get("estado"),
+                                EstadoAprobacion.APROBADO
+                        )
+                )
+                .and((root, cq, cb) ->
+                        cb.equal(
+                                root.get("estadoPublicacion"),
+                                EstadoPublicacion.PUBLICADO
+                        )
+                );
+
+        if (name != null && !name.isBlank()) {
+            spec = spec.and((root, cq, cb) ->
+                    cb.like(
+                            cb.lower(root.get("nombre")),
+                            "%" + name.toLowerCase() + "%"
+                    )
+            );
+        }
+
+        if (type != null && !type.isBlank()) {
+            spec = spec.and((root, cq, cb) ->
+                    cb.equal(
+                            root.get("tipoPlato"),
+                            TipoPlato.valueOf(type.toUpperCase())
+                    )
+            );
+        }
+
+        if (ingredient != null && !ingredient.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                Join<?,?> joinIng = root.join("ingredients", JoinType.INNER);
+                return cb.equal(
+                        cb.lower(joinIng.get("ingredient").get("nombre")),
+                        ingredient.toLowerCase()
+                );
+            });
+        }
+
+        if (excludeIngredient != null && !excludeIngredient.isBlank()) {
+            spec = spec.and((root, cq, cb) -> {
+                Join<?,?> joinIng = root.join("ingredients", JoinType.LEFT);
+                return cb.notEqual(
+                        cb.lower(joinIng.get("ingredient").get("nombre")),
+                        excludeIngredient.toLowerCase()
+                );
+            });
+        }
+
+        if (userAlias != null && !userAlias.isBlank()) {
+            spec = spec.and((root, cq, cb) ->
+                    cb.equal(
+                            cb.lower(root.get("usuarioCreador").get("alias")),
+                            userAlias.toLowerCase()
+                    )
+            );
+        }
+
+        // ────────────────────────────────
+        // Ordenamiento
+        // ────────────────────────────────
+        Sort sortOrder = Sort.by("nombre"); // alfabético por defecto
+        if ("newest".equalsIgnoreCase(sort)) {
+            sortOrder = Sort.by(Sort.Direction.DESC, "fechaCreacion");
+        } else if ("user".equalsIgnoreCase(sort)) {
+            sortOrder = Sort.by(Sort.Direction.ASC, "usuarioCreador.alias");
+        }
+
+        // ────────────────────────────────
+        // Ejecuta la consulta y mapea
+        // ────────────────────────────────
+        List<Recipe> recipes = recipeRepository.findAll(spec, sortOrder);
+        return recipes.stream()
+                .map(r -> {
+                    Double avg = ratingRepository.findAverageRatingByRecipeId(r.getId());
+                    return new RecipeSummaryResponse(
+                            r.getId(),
+                            r.getNombre(),
+                            r.getDescripcion(),
+                            r.getMediaUrls(),
+                            r.getTiempo(),
+                            r.getPorciones(),
+                            r.getTipoPlato().name(),
+                            r.getCategoria().name(),
+                            r.getUsuarioCreador().getAlias(),
+                            r.getUsuarioCreador().getUrlFotoPerfil(),
+                            avg != null ? avg : 0.0
+                    );
+                })
                 .collect(Collectors.toList());
     }
 }

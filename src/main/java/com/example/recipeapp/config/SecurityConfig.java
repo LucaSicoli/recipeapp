@@ -81,10 +81,14 @@ public class SecurityConfig {
                                 "/recipes/{id:\\\\d+}/draft/full"// tus guardadas
                         ).authenticated()
 
+                        .requestMatchers(HttpMethod.GET, "/recipes/search").permitAll()
+
                         .requestMatchers(HttpMethod.GET, "/recipes/created").authenticated()
 
                         // ratings públicos
                         .requestMatchers(HttpMethod.GET, "/ratings/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/ratings/count/me").authenticated()
                         // resto de métodos (POST, PUT, DELETE) sí requieren JWT
                         .anyRequest().authenticated()
                 )

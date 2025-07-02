@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -92,5 +93,13 @@ public class RatingService {
 
     public void removeRating(Long id) {
         ratingRepository.deleteById(id);
+    }
+
+    public long countByCurrentUser(String email) {
+        User u = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new NoSuchElementException("Usuario no encontrado: " + email)
+                );
+        return ratingRepository.countByUserId(u.getId());
     }
 }

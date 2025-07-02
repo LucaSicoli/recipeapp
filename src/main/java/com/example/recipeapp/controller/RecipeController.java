@@ -149,9 +149,41 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.getMySavedRecipesSummary(email));
     }
 
+    @PutMapping("/{id}/save")
+    public ResponseEntity<Void> saveRecipe(@PathVariable Long id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        recipeService.saveRecipeForUser(id, email);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Quita la receta de los guardados del usuario
+     */
+    @DeleteMapping("/{id}/save")
+    public ResponseEntity<Void> unsaveRecipe(@PathVariable Long id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        recipeService.unsaveRecipeForUser(id, email);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/created")
     public ResponseEntity<List<RecipeSummaryResponse>> listMyPublished() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(recipeService.getMyPublishedSummaries(email));
+    }
+
+    // GET /recipes/search?name=&type=&ingredient=&excludeIngredient=&userAlias=&sort=
+    @GetMapping("/search")
+    public ResponseEntity<List<RecipeSummaryResponse>> searchRecipes(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String ingredient,
+            @RequestParam(required = false) String excludeIngredient,
+            @RequestParam(required = false) String userAlias,
+            @RequestParam(required = false, defaultValue = "name") String sort
+    ) {
+        List<RecipeSummaryResponse> results =
+                recipeService.searchRecipes(name, type, ingredient, excludeIngredient, userAlias, sort);
+        return ResponseEntity.ok(results);
     }
 }
