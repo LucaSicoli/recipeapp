@@ -2,6 +2,7 @@ package com.example.recipeapp.controller;
 
 import com.example.recipeapp.model.Recipe;
 import com.example.recipeapp.payload.RecipeDetailResponse;
+import com.example.recipeapp.payload.RecipeNameCheckResponse;
 import com.example.recipeapp.payload.RecipeRequest;
 import com.example.recipeapp.payload.RecipeSummaryResponse;
 import com.example.recipeapp.payload.UserSavedRecipeDTO;
@@ -188,9 +189,23 @@ public class RecipeController {
     }
 
     @GetMapping("/check-name")
-    public ResponseEntity<RecipeSummaryResponse> checkRecipeName(@RequestParam String nombre) {
+    public ResponseEntity<RecipeNameCheckResponse> checkRecipeName(@RequestParam String nombre) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        RecipeSummaryResponse response = recipeService.checkRecipeNameForUser(nombre, email);
+        RecipeNameCheckResponse response = recipeService.checkRecipeNameForUser(nombre, email);
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}/replace")
+    public ResponseEntity<Recipe> replaceRecipe(
+            @PathVariable Long id,
+            @Valid @RequestBody RecipeRequest newRecipeData) {
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!recipeService.existsById(id) || !recipeService.isOwner(id, email)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Recipe replaced = recipeService.replaceRecipe(id, email, newRecipeData);
+        return ResponseEntity.ok(replaced);
     }
 }

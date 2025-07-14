@@ -46,4 +46,13 @@ public interface RecipeRepository
             EstadoAprobacion estado,
             EstadoPublicacion estadoPublicacion
     );
+
+    // Método para buscar por estado Y estadoPublicacion (para el home)
+    List<Recipe> findByEstadoAndEstadoPublicacion(
+            EstadoAprobacion estado,
+            EstadoPublicacion estadoPublicacion
+    );
+
+    // Método para buscar todas las recetas de un usuario
+    List<Recipe> findByUsuarioCreadorId(Long usuarioId);
 }

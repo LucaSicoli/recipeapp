@@ -262,10 +262,12 @@ public class RecipeService {
     // Otros listados
     // ------------------------------------------------------------
     public List<RecipeSummaryResponse> getLatestApprovedPublishedSummaries() {
-        // Traer tanto APROBADO como RECHAZADO, ambos con PUBLICADO
-        List<Recipe> recetas = recipeRepository.findByEstadoPublicacion(EstadoPublicacion.PUBLICADO);
+        // Solo traer recetas APROBADAS y PUBLICADAS para el home
+        List<Recipe> recetas = recipeRepository.findByEstadoAndEstadoPublicacion(
+            EstadoAprobacion.APROBADO,
+            EstadoPublicacion.PUBLICADO
+        );
         return recetas.stream()
-                .filter(r -> r.getEstado() == EstadoAprobacion.APROBADO || r.getEstado() == EstadoAprobacion.RECHAZADO)
                 .sorted((a, b) -> b.getFechaCreacion().compareTo(a.getFechaCreacion()))
                 .limit(3)
                 .map(r -> new RecipeSummaryResponse(
@@ -477,14 +479,17 @@ public class RecipeService {
                 .collect(Collectors.toList());
     }
 
-    public RecipeSummaryResponse checkRecipeNameForUser(String nombre, String email) {
+    public RecipeNameCheckResponse checkRecipeNameForUser(String nombre, String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        List<Recipe> recetas = recipeRepository.findByUsuarioCreadorIdAndEstadoPublicacion(user.getId(), null);
+
+        // Buscar recetas del usuario con ese nombre (tanto borradores como publicadas)
+        List<Recipe> recetas = recipeRepository.findByUsuarioCreadorId(user.getId());
+
         for (Recipe r : recetas) {
             if (r.getNombre().equalsIgnoreCase(nombre)) {
                 Double avg = ratingRepository.findAverageRatingByRecipeId(r.getId());
-                return new RecipeSummaryResponse(
+                RecipeSummaryResponse existingRecipe = new RecipeSummaryResponse(
                     r.getId(),
                     r.getNombre(),
                     r.getDescripcion(),
@@ -499,8 +504,61 @@ public class RecipeService {
                     r.getEstadoPublicacion() != null ? r.getEstadoPublicacion().name() : null,
                     r.getEstado() != null ? r.getEstado().name() : null
                 );
+
+                String message = "Ya tienes una receta con el nombre '" + nombre + "'. " +
+                               "¿Deseas reemplazar la receta existente o editarla?";
+
+                return new RecipeNameCheckResponse(true, message, existingRecipe);
             }
         }
-        return null;
+
+        String message = "El nombre '" + nombre + "' está disponible. Puedes crear tu receta.";
+        return new RecipeNameCheckResponse(false, message, null);
+    }
+
+    @Transactional
+    public Recipe replaceRecipe(Long existingRecipeId, String email, RecipeRequest newRecipeData) {
+        Recipe existing = recipeRepository.findById(existingRecipeId)
+                .orElseThrow(() -> new RuntimeException("Receta no encontrada"));
+
+        if (!isOwner(existingRecipeId, email)) {
+            throw new AccessDeniedException("No tienes permiso para reemplazar esta receta");
+        }
+
+        // Limpiar ingredientes y pasos existentes
+        existing.getIngredients().clear();
+        existing.getSteps().clear();
+
+        // Actualizar todos los campos con los nuevos datos
+        existing.setNombre(newRecipeData.getNombre());
+        existing.setDescripcion(newRecipeData.getDescripcion());
+        existing.setTiempo(newRecipeData.getTiempo());
+        existing.setPorciones(newRecipeData.getPorciones());
+        existing.setTipoPlato(TipoPlato.valueOf(newRecipeData.getTipoPlato().toUpperCase()));
+        existing.setCategoria(Categoria.valueOf(newRecipeData.getCategoria().toUpperCase()));
+        existing.setMediaUrls(newRecipeData.getMediaUrls());
+        existing.setFechaCreacion(LocalDateTime.now()); // Nueva fecha de creación
+        existing.setEstado(EstadoAprobacion.PENDIENTE); // Vuelve a revisión
+        existing.setEstadoPublicacion(EstadoPublicacion.BORRADOR); // Comienza como borrador
+
+        // Recrear ingredientes
+        if (newRecipeData.getIngredients() != null) {
+            for (RecipeIngredientRequest ir : newRecipeData.getIngredients()) {
+                RecipeIngredient ri = recipeIngredientFactory.createRecipeIngredient(ir, existing);
+                existing.getIngredients().add(ri);
+            }
+        }
+
+        // Recrear pasos
+        if (newRecipeData.getSteps() != null) {
+            int numero = 1;
+            for (RecipeStepRequest sr : newRecipeData.getSteps()) {
+                sr.setNumeroPaso(numero++);
+                RecipeStep rs = recipeStepFactory.createRecipeStep(sr, existing);
+                existing.getSteps().add(rs);
+            }
+        }
+
+        return recipeRepository.save(existing);
     }
 }
