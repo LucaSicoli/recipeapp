@@ -179,6 +179,7 @@ public class RecipeService {
     public Recipe publish(Long recipeId) {
         Recipe r = recipeRepository.findById(recipeId)
                 .orElseThrow(() -> new RuntimeException("Receta no encontrada"));
+        r.setEstado(EstadoAprobacion.PENDIENTE);
         r.setEstadoPublicacion(EstadoPublicacion.PUBLICADO);
         return recipeRepository.save(r);
     }
