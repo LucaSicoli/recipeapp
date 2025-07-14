@@ -6,6 +6,7 @@ public class UserMeResponse {
     private String email;
     private String urlFotoPerfil;
     private String descripcion;
+    private Boolean activo;
 
     public UserMeResponse() {}
 
@@ -13,12 +14,14 @@ public class UserMeResponse {
                           String alias,
                           String email,
                           String urlFotoPerfil,
-                          String descripcion) {
+                          String descripcion,
+                          Boolean activo) {
         this.id             = id;
         this.alias          = alias;
         this.email          = email;
         this.urlFotoPerfil  = urlFotoPerfil;
         this.descripcion    = descripcion;
+        this.activo         = activo;
     }
 
     public Long getId() { return id; }
@@ -35,4 +38,7 @@ public class UserMeResponse {
 
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+
+    public Boolean getActivo() { return activo; }
+    public void setActivo(Boolean activo) { this.activo = activo; }
 }

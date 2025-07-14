@@ -58,7 +58,8 @@ public class UserController {
                 u.getAlias(),
                 u.getEmail(),
                 u.getUrlFotoPerfil(),
-                u.getDescripcion()
+                u.getDescripcion(),
+                u.getActivo()
         );
         return ResponseEntity.ok(dto);
     }

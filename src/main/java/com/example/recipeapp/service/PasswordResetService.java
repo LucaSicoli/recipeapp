@@ -27,9 +27,11 @@ public class PasswordResetService {
      * Paso 1: solicita un nuevo código.
      */
     public void requestReset(String email) {
-        // 1.1) Verifica que el email exista
-        if (!userRepo.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email no registrado");
+        // Busca el usuario por email
+        var userOpt = userRepo.findByEmail(email);
+        if (userOpt.isEmpty() || Boolean.FALSE.equals(userOpt.get().getActivo())) {
+            // No revela si el email existe o si está activo, responde igual siempre
+            return;
         }
         // 1.2) Limpia tokens expirados de toda la tabla
         tokenRepo.deleteByExpiresAtBefore(LocalDateTime.now());
