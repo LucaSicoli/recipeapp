@@ -476,4 +476,31 @@ public class RecipeService {
                 })
                 .collect(Collectors.toList());
     }
+
+    public RecipeSummaryResponse checkRecipeNameForUser(String nombre, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        List<Recipe> recetas = recipeRepository.findByUsuarioCreadorIdAndEstadoPublicacion(user.getId(), null);
+        for (Recipe r : recetas) {
+            if (r.getNombre().equalsIgnoreCase(nombre)) {
+                Double avg = ratingRepository.findAverageRatingByRecipeId(r.getId());
+                return new RecipeSummaryResponse(
+                    r.getId(),
+                    r.getNombre(),
+                    r.getDescripcion(),
+                    r.getMediaUrls(),
+                    r.getTiempo(),
+                    r.getPorciones(),
+                    r.getTipoPlato() != null ? r.getTipoPlato().name() : null,
+                    r.getCategoria() != null ? r.getCategoria().name() : null,
+                    r.getUsuarioCreador().getAlias(),
+                    r.getUsuarioCreador().getUrlFotoPerfil(),
+                    avg != null ? avg : 0.0,
+                    r.getEstadoPublicacion() != null ? r.getEstadoPublicacion().name() : null,
+                    r.getEstado() != null ? r.getEstado().name() : null
+                );
+            }
+        }
+        return null;
+    }
 }

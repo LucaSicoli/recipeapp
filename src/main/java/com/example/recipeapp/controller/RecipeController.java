@@ -186,4 +186,11 @@ public class RecipeController {
                 recipeService.searchRecipes(name, type, ingredient, excludeIngredient, userAlias, sort);
         return ResponseEntity.ok(results);
     }
+
+    @GetMapping("/check-name")
+    public ResponseEntity<RecipeSummaryResponse> checkRecipeName(@RequestParam String nombre) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        RecipeSummaryResponse response = recipeService.checkRecipeNameForUser(nombre, email);
+        return ResponseEntity.ok(response);
+    }
 }
