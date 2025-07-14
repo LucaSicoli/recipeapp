@@ -262,12 +262,12 @@ public class RecipeService {
     // Otros listados
     // ------------------------------------------------------------
     public List<RecipeSummaryResponse> getLatestApprovedPublishedSummaries() {
-        return recipeRepository
-                .findTop3ByEstadoAndEstadoPublicacionOrderByFechaCreacionDesc(
-                        EstadoAprobacion.APROBADO,
-                        EstadoPublicacion.PUBLICADO
-                )
-                .stream()
+        // Traer tanto APROBADO como RECHAZADO, ambos con PUBLICADO
+        List<Recipe> recetas = recipeRepository.findByEstadoPublicacion(EstadoPublicacion.PUBLICADO);
+        return recetas.stream()
+                .filter(r -> r.getEstado() == EstadoAprobacion.APROBADO || r.getEstado() == EstadoAprobacion.RECHAZADO)
+                .sorted((a, b) -> b.getFechaCreacion().compareTo(a.getFechaCreacion()))
+                .limit(3)
                 .map(r -> new RecipeSummaryResponse(
                         r.getId(),
                         r.getNombre(),
@@ -277,14 +277,11 @@ public class RecipeService {
                         r.getPorciones(),
                         r.getTipoPlato().name(),
                         r.getCategoria().name(),
-                        // alias del creador
                         r.getUsuarioCreador().getAlias(),
-                        // ← nueva URL de la foto de perfil
                         r.getUsuarioCreador().getUrlFotoPerfil(),
-                        // promedio de rating
                         ratingRepository.findAverageRatingByRecipeId(r.getId()),
-                        r.getEstadoPublicacion().name(), // ← nuevo campo
-                        r.getEstado().name() // ← nuevo campo
+                        r.getEstadoPublicacion().name(),
+                        r.getEstado().name()
                 ))
                 .collect(Collectors.toList());
     }
