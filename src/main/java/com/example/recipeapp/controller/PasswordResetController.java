@@ -1,5 +1,6 @@
 package com.example.recipeapp.controller;
 
+import com.example.recipeapp.payload.PasswordResetResponse;
 import com.example.recipeapp.service.PasswordResetService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,9 @@ public class PasswordResetController {
     @Autowired private PasswordResetService resetService;
 
     @PostMapping("/request-reset")
-    public ResponseEntity<?> requestReset(@RequestBody EmailDTO dto) {
-        resetService.requestReset(dto.getEmail());
-        return ResponseEntity.ok().build();
+    public ResponseEntity<PasswordResetResponse> requestReset(@RequestBody EmailDTO dto) {
+        PasswordResetResponse response = resetService.requestReset(dto.getEmail());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/verify-reset-code")

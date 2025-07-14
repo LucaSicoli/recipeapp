@@ -2,6 +2,7 @@
 package com.example.recipeapp.service;
 
 import com.example.recipeapp.model.PasswordResetToken;
+import com.example.recipeapp.payload.PasswordResetResponse;
 import com.example.recipeapp.repository.PasswordResetTokenRepository;
 import com.example.recipeapp.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,12 +27,13 @@ public class PasswordResetService {
     /**
      * Paso 1: solicita un nuevo código.
      */
-    public void requestReset(String email) {
-        // Busca el usuario por email
+    public PasswordResetResponse requestReset(String email) {
         var userOpt = userRepo.findByEmail(email);
-        if (userOpt.isEmpty() || Boolean.FALSE.equals(userOpt.get().getActivo())) {
-            // No revela si el email existe o si está activo, responde igual siempre
-            return;
+        if (userOpt.isEmpty()) {
+            return new PasswordResetResponse(PasswordResetResponse.Status.USER_NOT_FOUND, "Usuario no encontrado");
+        }
+        if (Boolean.FALSE.equals(userOpt.get().getActivo())) {
+            return new PasswordResetResponse(PasswordResetResponse.Status.USER_INACTIVE, "Usuario inactivo");
         }
         // 1.2) Limpia tokens expirados de toda la tabla
         tokenRepo.deleteByExpiresAtBefore(LocalDateTime.now());
@@ -53,6 +55,8 @@ public class PasswordResetService {
         msg.setSubject("Código de recuperación de contraseña");
         msg.setText("Tu código de recuperación es: " + code);
         mailSender.send(msg);
+
+        return new PasswordResetResponse(PasswordResetResponse.Status.SUCCESS, "Si el email es válido y activo, se enviará un código");
     }
 
     /**
