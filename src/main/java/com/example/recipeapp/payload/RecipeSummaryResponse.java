@@ -20,4 +20,6 @@ public class RecipeSummaryResponse {
     private String usuarioCreadorAlias;
     private String usuarioFotoPerfil;    // ← NUEVO campo
     private Double promedioRating;
+    private String estadoPublicacion; // NUEVO
+    private String estado; // NUEVO
 }

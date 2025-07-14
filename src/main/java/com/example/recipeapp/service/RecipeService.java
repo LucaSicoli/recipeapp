@@ -83,7 +83,7 @@ public class RecipeService {
                 .map(recipe -> {
                     User creator = recipe.getUsuarioCreador();
                     String alias = creator.getAlias();
-                    String foto  = creator.getUrlFotoPerfil();            // ← URL de la foto
+                    String foto  = creator.getUrlFotoPerfil();
                     Double avg   = ratingRepository.findAverageRatingByRecipeId(recipe.getId());
                     return new RecipeSummaryResponse(
                             recipe.getId(),
@@ -95,8 +95,10 @@ public class RecipeService {
                             recipe.getTipoPlato().name(),
                             recipe.getCategoria().name(),
                             alias,
-                            foto,                                            // ← lo pasamos al DTO
-                            (avg != null) ? avg : 0.0
+                            foto,
+                            (avg != null) ? avg : 0.0,
+                            recipe.getEstadoPublicacion().name(),
+                            recipe.getEstado().name()
                     );
                 })
                 .collect(Collectors.toList());
@@ -209,32 +211,6 @@ public class RecipeService {
         return recipeRepository.save(existing);
     }
 
-    public List<RecipeSummaryResponse> getMyDraftsSummary(String email) {
-        return getDraftsByUserEmail(email).stream()
-                .map(r -> {
-                    String firstMedia = r.getMediaUrls().isEmpty()
-                            ? null
-                            : r.getMediaUrls().get(0);
-                    return new RecipeSummaryResponse(
-                            r.getId(),
-                            r.getNombre(),
-                            r.getDescripcion(),
-                            Collections.singletonList(firstMedia),
-                            r.getTiempo(),
-                            r.getPorciones(),
-                            r.getTipoPlato().name(),
-                            r.getCategoria().name(),
-                            // alias del creador
-                            r.getUsuarioCreador().getAlias(),
-                            // ← nueva URL de la foto de perfil
-                            r.getUsuarioCreador().getUrlFotoPerfil(),
-                            // promedio de rating
-                            ratingRepository.findAverageRatingByRecipeId(r.getId())
-                    );
-                })
-                .collect(Collectors.toList());
-    }
-
     // ------------------------------------------------------------
     // Nuevo método: sincronizar ingredientes y pasos de un borrador
     // ------------------------------------------------------------
@@ -306,7 +282,9 @@ public class RecipeService {
                         // ← nueva URL de la foto de perfil
                         r.getUsuarioCreador().getUrlFotoPerfil(),
                         // promedio de rating
-                        ratingRepository.findAverageRatingByRecipeId(r.getId())
+                        ratingRepository.findAverageRatingByRecipeId(r.getId()),
+                        r.getEstadoPublicacion().name(), // ← nuevo campo
+                        r.getEstado().name() // ← nuevo campo
                 ))
                 .collect(Collectors.toList());
     }
@@ -344,8 +322,35 @@ public class RecipeService {
                             r.getTipoPlato().name(),
                             r.getCategoria().name(),
                             creator.getAlias(),
-                            creator.getUrlFotoPerfil(),                     // ← foto aquí también
-                            ratingRepository.findAverageRatingByRecipeId(r.getId())
+                            creator.getUrlFotoPerfil(),
+                            ratingRepository.findAverageRatingByRecipeId(r.getId()),
+                            r.getEstadoPublicacion().name(), // ← nuevo campo
+                            r.getEstado().name() // ← nuevo campo
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<RecipeSummaryResponse> getMyDraftsSummary(String email) {
+        return getDraftsByUserEmail(email).stream()
+                .map(r -> {
+                    String firstMedia = r.getMediaUrls().isEmpty()
+                            ? null
+                            : r.getMediaUrls().get(0);
+                    return new RecipeSummaryResponse(
+                            r.getId(),
+                            r.getNombre(),
+                            r.getDescripcion(),
+                            Collections.singletonList(firstMedia),
+                            r.getTiempo(),
+                            r.getPorciones(),
+                            r.getTipoPlato().name(),
+                            r.getCategoria().name(),
+                            r.getUsuarioCreador().getAlias(),
+                            r.getUsuarioCreador().getUrlFotoPerfil(),
+                            ratingRepository.findAverageRatingByRecipeId(r.getId()),
+                            r.getEstadoPublicacion().name(),
+                            r.getEstado().name()
                     );
                 })
                 .collect(Collectors.toList());
@@ -467,7 +472,9 @@ public class RecipeService {
                             r.getCategoria().name(),
                             r.getUsuarioCreador().getAlias(),
                             r.getUsuarioCreador().getUrlFotoPerfil(),
-                            avg != null ? avg : 0.0
+                            avg != null ? avg : 0.0,
+                            r.getEstadoPublicacion().name(), // ← nuevo campo
+                            r.getEstado().name() // ← nuevo campo
                     );
                 })
                 .collect(Collectors.toList());
