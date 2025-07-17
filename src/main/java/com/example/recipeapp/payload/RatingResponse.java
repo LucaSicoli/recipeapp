@@ -1,5 +1,6 @@
 package com.example.recipeapp.payload;
 
+import com.example.recipeapp.model.EstadoAprobacion;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,4 +13,5 @@ public class RatingResponse {
     private Integer puntos;
     private String comentario;
     private LocalDateTime fecha;
+    private EstadoAprobacion estadoAprobacion;
 }

@@ -26,14 +26,40 @@ public class RatingController {
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
-
-    // Obtener valoraciones de una receta, pero devolviendo DTO
+    // Obtener valoraciones APROBADAS de una receta (para usuarios públicos)
     @GetMapping("/recipe/{recipeId}")
     public ResponseEntity<List<RatingResponse>> getRatingsByRecipe(@PathVariable Long recipeId) {
         List<RatingResponse> ratings = ratingService.getRatingsDTOByRecipeId(recipeId);
         return new ResponseEntity<>(ratings, HttpStatus.OK);
     }
 
+    // Obtener TODAS las valoraciones de una receta (para administración)
+    @GetMapping("/recipe/{recipeId}/all")
+    public ResponseEntity<List<RatingResponse>> getAllRatingsByRecipe(@PathVariable Long recipeId) {
+        List<RatingResponse> ratings = ratingService.getAllRatingsDTOByRecipeId(recipeId);
+        return new ResponseEntity<>(ratings, HttpStatus.OK);
+    }
+
+    // Obtener ratings pendientes de aprobación (para administración)
+    @GetMapping("/pending")
+    public ResponseEntity<List<RatingResponse>> getPendingRatings() {
+        List<RatingResponse> pendingRatings = ratingService.getPendingRatings();
+        return new ResponseEntity<>(pendingRatings, HttpStatus.OK);
+    }
+
+    // Aprobar un rating (para administración)
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<RatingResponse> approveRating(@PathVariable Long id) {
+        RatingResponse approved = ratingService.approveRating(id);
+        return new ResponseEntity<>(approved, HttpStatus.OK);
+    }
+
+    // Rechazar un rating (para administración)
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<RatingResponse> rejectRating(@PathVariable Long id) {
+        RatingResponse rejected = ratingService.rejectRating(id);
+        return new ResponseEntity<>(rejected, HttpStatus.OK);
+    }
 
     // Actualizar un rating
     @PutMapping("/{id}")

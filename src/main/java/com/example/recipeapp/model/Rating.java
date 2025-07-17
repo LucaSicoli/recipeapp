@@ -32,4 +32,8 @@ public class Rating {
     private String comentario;
 
     private LocalDateTime fecha;
+
+    // Estado de aprobación del comentario
+    @Enumerated(EnumType.STRING)
+    private EstadoAprobacion estadoAprobacion = EstadoAprobacion.PENDIENTE;
 }
