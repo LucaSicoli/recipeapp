@@ -22,4 +22,5 @@ public class RecipeSummaryResponse {
     private Double promedioRating;
     private String estadoPublicacion; // NUEVO
     private String estado; // NUEVO
+    private String fechaCreacion;
 }

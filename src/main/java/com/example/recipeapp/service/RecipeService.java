@@ -98,7 +98,8 @@ public class RecipeService {
                             foto,
                             (avg != null) ? avg : 0.0,
                             recipe.getEstadoPublicacion().name(),
-                            recipe.getEstado().name()
+                            recipe.getEstado().name(),
+                            recipe.getFechaCreacion() != null ? recipe.getFechaCreacion().toString() : null
                     );
                 })
                 .collect(Collectors.toList());
@@ -283,7 +284,8 @@ public class RecipeService {
                         r.getUsuarioCreador().getUrlFotoPerfil(),
                         ratingRepository.findAverageRatingByRecipeId(r.getId()),
                         r.getEstadoPublicacion().name(),
-                        r.getEstado().name()
+                        r.getEstado().name(),
+                        r.getFechaCreacion() != null ? r.getFechaCreacion().toString() : null
                 ))
                 .collect(Collectors.toList());
     }
@@ -316,15 +318,16 @@ public class RecipeService {
                             r.getNombre(),
                             r.getDescripcion(),
                             r.getMediaUrls(),
-                            r.getTiempo(),
+                            Long.valueOf(r.getTiempo()),
                             r.getPorciones(),
                             r.getTipoPlato().name(),
                             r.getCategoria().name(),
                             creator.getAlias(),
                             creator.getUrlFotoPerfil(),
                             ratingRepository.findAverageRatingByRecipeId(r.getId()),
-                            r.getEstadoPublicacion().name(), // ← nuevo campo
-                            r.getEstado().name() // ← nuevo campo
+                            r.getEstadoPublicacion().name(),
+                            r.getEstado().name(),
+                            r.getFechaCreacion() != null ? r.getFechaCreacion().toString() : null
                     );
                 })
                 .collect(Collectors.toList());
@@ -340,8 +343,8 @@ public class RecipeService {
                             r.getId(),
                             r.getNombre(),
                             r.getDescripcion(),
-                            Collections.singletonList(firstMedia),
-                            r.getTiempo(),
+                            java.util.Collections.singletonList(firstMedia),
+                            Long.valueOf(r.getTiempo()),
                             r.getPorciones(),
                             r.getTipoPlato().name(),
                             r.getCategoria().name(),
@@ -349,10 +352,11 @@ public class RecipeService {
                             r.getUsuarioCreador().getUrlFotoPerfil(),
                             ratingRepository.findAverageRatingByRecipeId(r.getId()),
                             r.getEstadoPublicacion().name(),
-                            r.getEstado().name()
+                            r.getEstado().name(),
+                            r.getFechaCreacion() != null ? r.getFechaCreacion().toString() : null
                     );
                 })
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Transactional
@@ -465,27 +469,25 @@ public class RecipeService {
                             r.getNombre(),
                             r.getDescripcion(),
                             r.getMediaUrls(),
-                            r.getTiempo(),
+                            Long.valueOf(r.getTiempo()),
                             r.getPorciones(),
                             r.getTipoPlato().name(),
                             r.getCategoria().name(),
                             r.getUsuarioCreador().getAlias(),
                             r.getUsuarioCreador().getUrlFotoPerfil(),
                             avg != null ? avg : 0.0,
-                            r.getEstadoPublicacion().name(), // ← nuevo campo
-                            r.getEstado().name() // ← nuevo campo
+                            r.getEstadoPublicacion().name(),
+                            r.getEstado().name(),
+                            r.getFechaCreacion() != null ? r.getFechaCreacion().toString() : null
                     );
                 })
-                .collect(Collectors.toList());
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public RecipeNameCheckResponse checkRecipeNameForUser(String nombre, String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // Buscar recetas del usuario con ese nombre (tanto borradores como publicadas)
         List<Recipe> recetas = recipeRepository.findByUsuarioCreadorId(user.getId());
-
         for (Recipe r : recetas) {
             if (r.getNombre().equalsIgnoreCase(nombre)) {
                 Double avg = ratingRepository.findAverageRatingByRecipeId(r.getId());
@@ -494,7 +496,7 @@ public class RecipeService {
                     r.getNombre(),
                     r.getDescripcion(),
                     r.getMediaUrls(),
-                    r.getTiempo(),
+                    Long.valueOf(r.getTiempo()),
                     r.getPorciones(),
                     r.getTipoPlato() != null ? r.getTipoPlato().name() : null,
                     r.getCategoria() != null ? r.getCategoria().name() : null,
@@ -502,16 +504,14 @@ public class RecipeService {
                     r.getUsuarioCreador().getUrlFotoPerfil(),
                     avg != null ? avg : 0.0,
                     r.getEstadoPublicacion() != null ? r.getEstadoPublicacion().name() : null,
-                    r.getEstado() != null ? r.getEstado().name() : null
+                    r.getEstado() != null ? r.getEstado().name() : null,
+                    r.getFechaCreacion() != null ? r.getFechaCreacion().toString() : null
                 );
-
                 String message = "Ya tienes una receta con el nombre '" + nombre + "'. " +
                                "¿Deseas reemplazar la receta existente o editarla?";
-
                 return new RecipeNameCheckResponse(true, message, existingRecipe);
             }
         }
-
         String message = "El nombre '" + nombre + "' está disponible. Puedes crear tu receta.";
         return new RecipeNameCheckResponse(false, message, null);
     }
@@ -562,3 +562,4 @@ public class RecipeService {
         return recipeRepository.save(existing);
     }
 }
+
