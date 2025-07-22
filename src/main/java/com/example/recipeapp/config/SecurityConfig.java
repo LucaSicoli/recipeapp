@@ -61,6 +61,12 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        //Swagger y OpenAPI públicos
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         // login / reset siguen públicos
                         .requestMatchers("/api/auth/**").permitAll()
                         // imágenes públicas

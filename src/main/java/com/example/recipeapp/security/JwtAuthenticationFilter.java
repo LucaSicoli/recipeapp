@@ -64,6 +64,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return true;
         }
 
+        if (path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")
+                || path.equals("/swagger-ui.html")) {
+            return true;
+        }
+
         // resto: sí filtrar (requieren JWT)
         return false;
     }
